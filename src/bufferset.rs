@@ -1,0 +1,52 @@
+use glium::backend::{Facade};
+use glium::index::{PrimitiveType, IndexBuffer};
+use glium::vertex::{VertexBuffer};
+
+use itertools::{Itertools, Zip};
+
+use defs::*;
+use mesh::{Mesh};
+
+#[derive(Copy, Clone)]
+pub struct Vert {
+  pos: [f32; 3],
+  norm: [f32; 3],
+}
+
+impl Vert {
+  pub fn new(pos: & [f32; 3], norm: & [f32; 3]) -> Vert {
+    Vert {
+      pos: [pos[0], pos[1], pos[2]],
+      norm: [norm[0], norm[1], norm[2]]
+    }
+  }
+}
+
+implement_vertex!(Vert, pos);
+
+pub struct BufferSet {
+  pub vertices: VertexBuffer<Vert>,
+  pub indices: IndexBuffer<u32>
+}
+
+impl BufferSet {
+  // pub fn new <T> (gl: & T, primtype: PrimitiveType) -> BufferSet
+  // where T: Facade {
+  //   BufferSet {
+  //     indices: IndexBuffer::<u32>::empty(gl, primtype, 0).unwrap(),
+  //     vertices: VertexBuffer::<Vert>::empty(gl, 0).unwrap()
+  //   }
+  // }
+
+  pub fn from_mesh <T> (gl: & T, mesh: & Mesh) -> BufferSet
+  where T: Facade {
+    let v_buffer: Vec<Vert> = Zip::new((mesh.vert.iter(), mesh.norm.iter()))
+      .map(|(v, n): (& Pt, & Vec3)| Vert::new(v.as_ref(), n.as_ref()))
+      .collect::<Vec<Vert>>();
+
+    BufferSet {
+      indices: IndexBuffer::new(gl, mesh.primitive, & mesh.index[..]).unwrap(),
+      vertices: VertexBuffer::new(gl, & v_buffer[..]).unwrap()
+    }
+  }
+}

@@ -1,16 +1,15 @@
-use std::f32;
-
 use glium::index::{PrimitiveType};
 
 // Needed for normalize
 use cgmath::EuclideanVector;
+use cgmath::Vector;
 
 use defs::*;
 
 pub struct Mesh {
   pub vert: Vec<Pt>,
   pub norm: Vec<Vec3>,
-  pub index: Vec<u32>,
+  pub index: Vec<Tri>,
   pub primitive: PrimitiveType,
 }
 
@@ -19,7 +18,7 @@ impl Mesh {
     Mesh {
       vert: Vec::<Pt>::new(),
       norm: Vec::<Vec3>::new(),
-      index: Vec::<u32>::new(),
+      index: Vec::<Tri>::new(),
       primitive: primtype
     }
   }
@@ -32,52 +31,54 @@ impl Mesh {
     self.norm.push(n);
   }
 
-  pub fn add_index(&mut self, i: u32) {
-    self.index.push(i);
-  }
-
-  pub fn add_face(&mut self, f: [u32; 3]) {
-    self.index.extend_from_slice(& f);
+  pub fn add_tri(&mut self, f: Tri) {
+    self.index.push(f);
   }
 
   pub fn add_triangle(&mut self, verts: [Pt; 3], norms: [Vec3; 3]) {
     match self.primitive {
       PrimitiveType::TrianglesList => {
         for (& vertex, & normal) in verts.iter().zip(norms.iter()) {
-          let len = self.vert.len();
-          self.add_index(len as u32);
           self.add_vert(vertex);
           self.add_norm(normal);
         }
+        let ln = self.vert.len();
+        self.add_tri([ln - 3, ln - 2, ln - 1]);
       },
       _ => panic!("add_triangle not implemented for the primitive type you provided")
     }
   }
 }
 
-/*
-export function genFaceNormalsPerVertex(vertices, triangles) {
-  let normals = triangles.reduce((list, triangle) => {
-    let norm = getNormal(vertices, triangle);
-
-    list[triangle[0]] = norm;
-    // Clone for other cases
-    list[triangle[1]] = vec3.clone(norm);
-    list[triangle[2]] = vec3.clone(norm);
-
-    return list;
-  }, []);
-
-  return normals;
+pub fn get_normal(vtxs: & Vec<Pt>, idxs: & Tri) -> Vec3 {
+  return get_verts_normal(& vtxs[idxs[0]], & vtxs[idxs[1]], & vtxs[idxs[2]]);
 }
 
- */
+pub fn get_verts_normal(vert0: & Pt, vert1: & Pt, vert2: & Pt) -> Vec3 {
+  let s1 = vert1 - vert0;
+  let s2 = vert2 - vert0;
+  let norm: Vec3 = s1.cross(s2);
+  return norm.normalize();
+}
 
-pub fn construct_normals(vertices: & Vec<Pt>, indices: & Vec<u32>) -> Vec<Vec3> {
-  unimplemented!();
-  // indices.iter().chunks_lazy(3).reduce(|triangle| {
+pub fn construct_normals<'a>(vertices: & Vec<Pt>, indices: & Vec<Tri>) -> Vec<Vec3> {
+  let mut normals: Vec<Vec3> = Vec::new();
+  normals.resize(vertices.len(), Vec3::zero());
 
-  // })
+  let mut sums: Vec<i32> = Vec::new();
+  sums.resize(vertices.len(), 0);
+
+  for tri in indices {
+    let norm = get_verts_normal(& vertices[tri[0]], & vertices[tri[1]], & vertices[tri[2]]);
+    for & i in tri {
+      normals[i] = normals[i] + norm;
+      sums[i] += 1;
+    }
+  }
+
+  let normalized = normals.iter().zip(sums.iter()).map(|(& norm, & sum)| norm / (sum as f32));
+
+  return normalized.collect::<Vec<Vec3>>();
 }
 
 pub fn get_tetrahedron() -> Mesh {
@@ -87,81 +88,44 @@ pub fn get_tetrahedron() -> Mesh {
 pub fn get_cube() -> Mesh {
   let mut cube = Mesh::new(PrimitiveType::TrianglesList);
 
-  let bounds = [-1_f32, 1_f32];
-  // Make it a real cube here ...
-  for & x in bounds.iter() {
-    for & y in bounds.iter() {
-      for & z in bounds.iter() {
-        cube.add_vert(Pt::new(x, y, z));
-        cube.add_norm(Vec3::new(x, y, z).normalize());
-        println!("{}, {}, {}", x, y, z);
-      }
-    }
-  }
-
-  let iratio = 1_f32 / 3_f32;
-  let irad = iratio.sqrt();
-  let diagratio = 2_f32 / 3_f32;
-  let diag = diagratio.sqrt();
+  let irad = (1_f32 / 3_f32).sqrt();
+  let diag = (2_f32 / 3_f32).sqrt();
   let zero = 0_f32;
 
-  let v0 = Pt::new(zero, irad, diag);
-  let v1 = Pt::new(diag, irad, zero);
-  let v2 = Pt::new(zero, irad, -diag);
-  let v3 = Pt::new(-diag, irad, zero);
-  let v4 = Pt::new(-diag, -irad, zero);
-  let v5 = Pt::new(zero, -irad, diag);
-  let v6 = Pt::new(diag, -irad, zero);
-  let v7 = Pt::new(zero, -irad, -diag);
-
-// 0, 1, 2
-
-// 2, 3, 0
-// 3, 7, 4
-// 4, 0, 3
-// 4, 5, 1
-// 1, 0, 4
-
-
-
+  cube.add_vert(Pt::new(zero, irad, diag));
+  cube.add_vert(Pt::new(diag, irad, zero));
+  cube.add_vert(Pt::new(zero, irad, -diag));
+  cube.add_vert(Pt::new(-diag, irad, zero));
+  cube.add_vert(Pt::new(-diag, -irad, zero));
+  cube.add_vert(Pt::new(zero, -irad, diag));
+  cube.add_vert(Pt::new(diag, -irad, zero));
+  cube.add_vert(Pt::new(zero, -irad, -diag));
 
   // front top
-  // triangles.push([0, 1, 2]);
-  // triangles.push([0, 2, 3]);
+  cube.add_tri([0, 1, 2]);
+  cube.add_tri([0, 2, 3]);
 
   // // front bottom right
-  // triangles.push([0, 6, 1]);
-  // triangles.push([0, 5, 6]);
+  cube.add_tri([0, 6, 1]);
+  cube.add_tri([0, 5, 6]);
 
   // // front bottom left
-  // triangles.push([0, 3, 4]);
-  // triangles.push([0, 4, 5]);
+  cube.add_tri([0, 3, 4]);
+  cube.add_tri([0, 4, 5]);
 
   // // back top right
-  // triangles.push([7, 2, 1]);
-  // triangles.push([7, 1, 6]);
+  cube.add_tri([7, 2, 1]);
+  cube.add_tri([7, 1, 6]);
 
   // // back bottom
-  // triangles.push([7, 6, 5]);
-  // triangles.push([7, 5, 4]);
+  cube.add_tri([7, 6, 5]);
+  cube.add_tri([7, 5, 4]);
 
   // // back top left
-  // triangles.push([7, 4, 3]);
-  // triangles.push([7, 3, 2]);
+  cube.add_tri([7, 4, 3]);
+  cube.add_tri([7, 3, 2]);
 
-
-
-
-// n
-// a, m, m
-// a, 
-// 0, 1, 2
-
-//   cube.add_face([0, 1, 2]);
-// // 1, 3, 2
-// 2, 
-
-
+  cube.norm = construct_normals(& cube.vert, & cube.index);
 
   return cube;
 }

@@ -7,12 +7,12 @@ mod defs;
 mod mesh;
 mod bufferset;
 
+use std::io::prelude::*;
+use std::fs::File;
+
 use glium::glutin;
 use glium::{DisplayBuild, Surface};
-use glium::vertex;
-use glium::index;
 
-use defs::*;
 use mesh::*;
 use bufferset::*;
 
@@ -27,6 +27,18 @@ fn main() {
 
   let buffers = BufferSet::from_mesh(& window, & geom);
 
+  let mut vert_shader_file = File::open("src/shader/base.vs").unwrap();
+  let mut vert_shader = String::new();
+  vert_shader_file.read_to_string(&mut vert_shader).unwrap();
+
+  let mut frag_shader_file = File::open("src/shader/base.fs").unwrap();
+  let mut frag_shader = String::new();
+  frag_shader_file.read_to_string(&mut frag_shader).unwrap();
+
+  let basic_program = glium::Program::from_source(& window, & vert_shader, & frag_shader, None).unwrap();
+
+  // let basic_uniforms: glium::
+
   let draw_params: glium::DrawParameters = Default::default();
 
   loop {
@@ -34,7 +46,7 @@ fn main() {
 
     target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0);
 
-    // target.draw(& attribute_buf, & index_buf, & program, & uniforms, & draw_params);
+    // target.draw(& buffers.vertices, & buffers.indices, & basic_program, & basic_uniforms, & draw_params);
 
     target.finish().unwrap();
 

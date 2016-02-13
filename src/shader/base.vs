@@ -1,3 +1,5 @@
+#version 330
+
 uniform mat4 u_model_world;
 uniform mat4 u_world_cam;
 uniform mat4 u_projection;
@@ -13,5 +15,5 @@ void main() {
   cam_pos = u_model_world * u_world_cam * vec4(a_pos, 1.0);
   gl_Position = u_projection * cam_pos;
 
-  cam_norm = u_normal_cam * vec4(a_norm, 1.0);
+  cam_norm = (u_normal_cam * vec4(a_norm, 1.0)).xyz;
 }

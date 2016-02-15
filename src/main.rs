@@ -101,9 +101,9 @@ fn main() {
       u_normal_cam: mat4_uniform(& normal_cam)
     };
 
-    target.draw(& cube_buffer.vertices, & cube_buffer.indices, & basic_program, & basic_uniforms, & draw_params).unwrap();
-
     target.draw(& tet_buffer.vertices, & tet_buffer.indices, & basic_program, & basic_uniforms, & draw_params).unwrap();
+
+    target.draw(& cube_buffer.vertices, & cube_buffer.indices, & basic_program, & basic_uniforms, & draw_params).unwrap();
 
     target.finish().unwrap();
 

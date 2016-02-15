@@ -9,20 +9,20 @@ use mesh::{Mesh};
 
 #[derive(Copy, Clone)]
 pub struct Vert {
-  pos: [f32; 3],
-  norm: [f32; 3],
+  a_pos: [f32; 3],
+  a_norm: [f32; 3],
 }
 
 impl Vert {
   pub fn new(pos: & [f32; 3], norm: & [f32; 3]) -> Vert {
     Vert {
-      pos: [pos[0], pos[1], pos[2]],
-      norm: [norm[0], norm[1], norm[2]]
+      a_pos: [pos[0], pos[1], pos[2]],
+      a_norm: [norm[0], norm[1], norm[2]]
     }
   }
 }
 
-implement_vertex!(Vert, pos);
+implement_vertex!(Vert, a_pos, a_norm);
 
 pub struct BufferSet {
   pub vertices: VertexBuffer<Vert>,

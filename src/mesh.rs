@@ -1,3 +1,5 @@
+use std::f32;
+
 use glium::index::{PrimitiveType};
 
 // Needed for normalize
@@ -31,11 +33,11 @@ impl Mesh {
     self.norm.push(n);
   }
 
-  pub fn add_tri(&mut self, f: Tri) {
-    self.index.push(f);
+  pub fn add_tri(&mut self, t: Tri) {
+    self.index.push(t);
   }
 
-  pub fn add_triangle(&mut self, verts: [Pt; 3], norms: [Vec3; 3]) {
+  pub fn add_triangle(&mut self, verts: & [Pt; 3], norms: & [Vec3; 3]) {
     match self.primitive {
       PrimitiveType::TrianglesList => {
         for (& vertex, & normal) in verts.iter().zip(norms.iter()) {
@@ -58,10 +60,25 @@ pub fn get_verts_normal(vert0: & Pt, vert1: & Pt, vert2: & Pt) -> Vec3 {
   let s1 = vert1 - vert0;
   let s2 = vert2 - vert0;
   let norm: Vec3 = s1.cross(s2);
-  return norm.normalize();
+  norm.normalize();
+  return norm;
 }
 
-pub fn construct_normals<'a>(vertices: & Vec<Pt>, indices: & Vec<Tri>) -> Vec<Vec3> {
+pub fn split_mesh_vertices(mesh: & Mesh) -> Mesh {
+  let mut split_mesh = Mesh::new(PrimitiveType::TrianglesList);
+
+  for tri in & mesh.index {
+    split_mesh.add_vert(mesh.vert[tri[0]]);
+    split_mesh.add_vert(mesh.vert[tri[1]]);
+    split_mesh.add_vert(mesh.vert[tri[2]]);
+    let ln = split_mesh.vert.len();
+    split_mesh.add_tri([ln - 3, ln - 2, ln - 1]);
+  }
+
+  return split_mesh;
+}
+
+pub fn construct_normals(vertices: & Vec<Pt>, indices: & Vec<Tri>) -> Vec<Vec3> {
   let mut normals: Vec<Vec3> = Vec::new();
   normals.resize(vertices.len(), Vec3::zero());
 
@@ -82,7 +99,45 @@ pub fn construct_normals<'a>(vertices: & Vec<Pt>, indices: & Vec<Tri>) -> Vec<Ve
 }
 
 pub fn get_tetrahedron() -> Mesh {
-  unimplemented!();
+  let mut tet = Mesh::new(PrimitiveType::TrianglesList);
+
+  let two_pi: f32 = 2.0 * f32::consts::PI;
+  let a0: f32 = two_pi * 0.0;
+  let a1: f32 = two_pi * 1.0 / 3.0;
+  let a2: f32 = two_pi * 2.0 / 3.0;
+  // When the circumradius of the tetrahedron is 1, the height is 4 / 3
+  let height: f32 = 4.0 / 3.0;
+  let distance_bottom: f32 = 1.0 - height; // Distance to the 'back' of the tetrahedron
+  let distance_point: f32 = (0.5_f32).sqrt() * height;
+
+  tet.add_vert(Pt::new(0.0, 1.0, 0.0));
+  tet.add_vert(Pt::new(distance_point * a0.sin(), distance_bottom, distance_point * a0.cos()));
+  tet.add_vert(Pt::new(distance_point * a1.sin(), distance_bottom, distance_point * a1.cos()));
+  tet.add_vert(Pt::new(distance_point * a2.sin(), distance_bottom, distance_point * a2.cos()));
+
+  tet.add_tri([0, 1, 2]);
+  tet.add_tri([2, 3, 0]);
+  tet.add_tri([3, 1, 0]);
+  tet.add_tri([1, 3, 2]);
+
+  tet = split_mesh_vertices(& tet);
+  tet.norm = construct_normals(& tet.vert, & tet.index);
+
+  return tet;
+
+  // let v1 = vec3.fromValues(0, 0, 1);
+  // let v2 = vec3.fromValues(dPoint * Math.cos(a0), dPoint * Math.sin(a0), dBack);
+  // let v3 = vec3.fromValues(dPoint * Math.cos(a1), dPoint * Math.sin(a1), dBack);
+  // let v4 = vec3.fromValues(dPoint * Math.cos(a2), dPoint * Math.sin(a2), dBack);
+
+  // let vertices = [ v1, v2, v3, v4 ];
+
+  // let triangles = [];
+
+  // triangles.push([0, 1, 2]);
+  // triangles.push([2, 3, 0]);
+  // triangles.push([3, 1, 0]);
+  // triangles.push([1, 3, 2]);
 }
 
 pub fn get_cube() -> Mesh {
@@ -125,6 +180,7 @@ pub fn get_cube() -> Mesh {
   cube.add_tri([7, 4, 3]);
   cube.add_tri([7, 3, 2]);
 
+  cube = split_mesh_vertices(& cube);
   cube.norm = construct_normals(& cube.vert, & cube.index);
 
   return cube;

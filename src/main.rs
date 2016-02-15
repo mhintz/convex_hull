@@ -70,6 +70,11 @@ fn main() {
   // Draw Parameters
   let draw_params = glium::draw_parameters::DrawParameters {
     backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
+    depth: glium::Depth {
+      test: glium::DepthTest::IfLess,
+      write: true,
+      ..Default::default()
+    },
     .. Default::default()
   };
 

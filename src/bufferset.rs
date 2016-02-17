@@ -8,10 +8,13 @@ use defs::*;
 use mesh::{Mesh};
 
 #[derive(Copy, Clone)]
+#[repr="C"]
 pub struct Vert {
   a_pos: [f32; 3],
   a_norm: [f32; 3],
 }
+
+implement_vertex!(Vert, a_pos, a_norm);
 
 impl Vert {
   pub fn new(pos: & [f32; 3], norm: & [f32; 3]) -> Vert {
@@ -21,8 +24,6 @@ impl Vert {
     }
   }
 }
-
-implement_vertex!(Vert, a_pos, a_norm);
 
 pub struct BufferSet {
   pub vertices: VertexBuffer<Vert>,

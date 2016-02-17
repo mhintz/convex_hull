@@ -16,6 +16,6 @@ void main() {
   // o_color = cam_pos;
   // o_color = vec4(normalize(world_norm), 1.0);
   // o_color = vec4(normalize(cam_norm), 1.0);
-  // o_color = vec4(grey_level, grey_level, grey_level, 1.0);
-  o_color = vec4(grey_level, grey_level, grey_level, 1.0) + vec4(modifier, 1.0);
+  o_color = vec4(grey_level, grey_level, grey_level, 1.0);
+  // o_color = vec4(grey_level, grey_level, grey_level, 1.0) + vec4(modifier, 1.0);
 }

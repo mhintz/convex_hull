@@ -6,6 +6,7 @@ extern crate itertools;
 mod defs;
 mod mesh;
 mod bufferset;
+mod half_edge_mesh;
 
 use std::io::prelude::*;
 use std::fs::File;

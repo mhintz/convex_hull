@@ -52,64 +52,55 @@ impl Face {
     FaceAdjacentVertIterator {
       start: self.edge.clone(),
       current: None,
-      vert: None,
-      phantom: PhantomData
     }
   }
 }
 
-pub struct FaceAdjacentVertIterator<'a> {
+pub struct FaceAdjacentVertIterator {
   start: EdgePtr,
   current: Option<EdgePtr>,
-  vert: Option<VertRcPtr>,
-  phantom: PhantomData<Ref<'a, Vert>>
 }
 
-impl<'a> Iterator for FaceAdjacentVertIterator<'a> {
-  type Item = Ref<'a, Vert>;
+impl Iterator for FaceAdjacentVertIterator {
+  type Item = VertPtr;
 
-  fn next(&mut self) -> Option<Ref<'a, Vert>> {
+  fn next(&mut self) -> Option<VertPtr> {
 
-    // map: T -> U
-    // and_then: T -> Option<U>
+    // map: Option<T>, Function<T -> U> -> Option<U>
+    // and_then: Option<T>, Function<T -> Option<U> -> Option<U>
     // I think this is an equivalent calculation: 
 
-    // self.current
-    //   .and_then(|cur_weak| cur_weak.upgrade())
-    //   .and_then(|cur_ref| {
-    //     let new_weak: EdgePtr = cur_ref.borrow().next.clone();
-    //     new_weak.upgrade()
-    //       .and_then(|new_strong: Rc<RefCell<Edge>>| {
-    //         if new_strong != self.start {
-    //           self.current = Some(new_weak.clone());
-    //           new_strong.borrow().origin.upgrade()
-    //             .map(|vert_ref| vert_ref.borrow())
-    //         } else { None }
-    //       })
+    // self.current.clone()
+    //   .and_then(|cur_weak: EdgePtr| cur_weak.upgrade())
+    //   .map(|cur_rc: EdgeRcPtr| cur_rc.borrow().next.clone())
+    //   .and_then(|next_weak: EdgePtr| {
+    //     if let (Some(next_strong), Some(start_strong)) = (next_weak.upgrade(), self.start.upgrade()) {
+    //       if next_strong != start_strong {
+    //         self.current = Some(next_weak);
+    //         Some(next_strong.borrow().origin.clone())
+    //       } else { None }
+    //     } else { None }
     //   })
     //   .or_else(|| {
     //     self.current = Some(self.start.clone());
-    //     return self.start.upgrade()
-    //       .and_then(|start_ref| start_ref.borrow().origin.upgrade())
-    //       .map(|vert_ref| vert_ref.borrow());
+    //     self.start.upgrade()
+    //       .map(|cur_rc: EdgeRcPtr| cur_rc.borrow().origin.clone())
     //   })
 
     if let Some(cur_weak) = self.current.clone() {
-      if let Some(cur_ref) = cur_weak.upgrade() {
-        let new_weak: EdgePtr = cur_ref.borrow().next.clone();
+      if let Some(cur_rc) = cur_weak.upgrade() {
+        let new_weak: EdgePtr = cur_rc.borrow().next.clone();
         if let (Some(new_strong), Some(start_strong)) = (new_weak.upgrade(), self.start.upgrade()) {
           if new_strong != start_strong {
-            self.current = Some(new_weak.clone());
-            self.vert = new_strong.borrow().origin.upgrade();
-            self.vert.map(|v| Ref::clone(& v.borrow()))
+            self.current = Some(new_weak);
+            Some(new_strong.borrow().origin.clone())
           } else { None }
         } else { None }
       } else { None }
     } else {
-      if let Some(start_ref) = self.start.upgrade() {
+      if let Some(start_strong) = self.start.upgrade() {
         self.current = Some(self.start.clone());
-        self.vert = start_ref.borrow().origin.upgrade();
-        self.vert.map(|v| Ref::clone(& v.borrow()))
+        Some(start_strong.borrow().origin.clone())
       } else { None }
     }
 

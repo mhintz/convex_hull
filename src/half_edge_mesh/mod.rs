@@ -1,5 +1,6 @@
 mod mesh;
 mod components;
+mod iterators;
 
 pub use self::mesh::Mesh;
 pub use self::components::Edge;

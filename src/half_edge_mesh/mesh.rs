@@ -3,14 +3,16 @@ use std::cell::RefCell;
 
 use defs::*;
 
-use half_edge_mesh::components::Edge;
-use half_edge_mesh::components::Vert;
-use half_edge_mesh::components::Face;
+use half_edge_mesh::components::{
+  Edge, EdgeRcPtr,
+  Vert, VertRcPtr,
+  Face, FaceRcPtr,
+};
 
 pub struct Mesh {
-  pub edges: Vec<Rc<RefCell<Edge>>>,
-  pub vertices: Vec<Rc<RefCell<Vert>>>,
-  pub faces: Vec<Rc<RefCell<Face>>>,
+  pub edges: Vec<EdgeRcPtr>,
+  pub vertices: Vec<VertRcPtr>,
+  pub faces: Vec<FaceRcPtr>,
   pub name: String,
   visited: i32,
 }

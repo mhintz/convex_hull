@@ -30,11 +30,44 @@ pub struct Edge {
 }
 
 impl Edge {
-
+  pub fn adjacent_verts<'a> (&'a self) -> EdgeAdjacentVertIterator<'a> {
+    EdgeAdjacentVertIterator {
+      count: 0,
+      start: self,
+    }
+  }
 }
 
 impl PartialEq<Edge> for Edge {
   fn eq(& self, other: & Edge) -> bool { self.id == other.id }
+}
+
+pub struct EdgeAdjacentVertIterator<'a> {
+  count: u8,
+  start: &'a Edge,
+}
+
+impl<'a> Iterator for EdgeAdjacentVertIterator<'a> {
+  type Item = VertPtr;
+
+  fn next(&mut self) -> Option<VertPtr> {
+    match self.count {
+      0 => {
+        self.count += 1;
+        Some(self.start.origin.clone())
+        // self.start.upgrade().map(|start_rc| start_rc.borrow().origin.clone())
+      },
+      1 => {
+        self.count += 1;
+        self.start.next.upgrade()
+          .map(|next_rc| next_rc.borrow().origin.clone())
+        // self.start.upgrade()
+        //   .and_then(|start_rc| start_rc.borrow().next.upgrade())
+        //   .map(|next_rc| next_rc.borrow().origin.clone())
+      },
+      _ => None,
+    }
+  }
 }
 
 pub struct Vert {

@@ -16,7 +16,14 @@ fn merge_upgrade<T>(weak_a: & Weak<T>, weak_b: & Weak<T>) -> Option<(Rc<T>, Rc<T
   }
 }
 
-// VertIterators
+fn merge_options<T>(opt_a: Option<T>, opt_b: Option<T>) -> Option<(T, T)> {
+  match (opt_a, opt_b) {
+    (Some(val_a), Some(val_b)) => Some((val_a, val_b)),
+    _ => None
+  }
+}
+
+// EdgeIterators
 
 pub struct EdgeAdjacentVertIterator<'a> {
   count: u8,
@@ -50,6 +57,40 @@ impl<'a> Iterator for EdgeAdjacentVertIterator<'a> {
     }
   }
 }
+
+pub struct EdgeAdjacentEdgeIterator;
+
+use std::iter;
+
+impl EdgeAdjacentEdgeIterator {
+  pub fn new<'a> (target: &'a Edge) -> iter::Chain<VertAdjacentEdgeIterator, VertAdjacentEdgeIterator> {
+    let edge_1_opt: Option<EdgePtr> = target.origin.upgrade()
+      .map(|vert_ptr_1: VertRcPtr| vert_ptr_1.borrow().edge.clone());
+
+    let edge_2_opt: Option<EdgePtr> = target.next.upgrade()
+      .and_then(|edge_next: EdgeRcPtr| edge_next.borrow().origin.upgrade())
+      .map(|vert_ptr_2: VertRcPtr| vert_ptr_2.borrow().edge.clone());
+
+    return merge_options(edge_1_opt, edge_2_opt)
+      .map_or_else(|| {
+        iter::empty().chain(iter::empty())
+      }, |res: (EdgePtr, EdgePtr)| {
+        let edge_1: EdgePtr = res.0;
+        let edge_2: EdgePtr = res.1;
+        VertAdjacentEdgeIterator::new(edge_1.clone()).chain(VertAdjacentEdgeIterator::new(edge_2.clone()))
+      });
+  }
+}
+
+// impl Iterator for EdgeAdjacentEdgeIterator {
+//   type Item = EdgePtr;
+
+//   fn next(&mut self) -> Option<EdgePtr> {
+
+//   }
+// }
+
+// VertIterators
 
 pub struct VertAdjacentVertIterator {
   start: EdgePtr,
@@ -91,8 +132,6 @@ impl Iterator for VertAdjacentVertIterator {
       })
   }
 }
-
-// EdgeIterators
 
 pub struct VertAdjacentEdgeIterator {
   start: EdgePtr,

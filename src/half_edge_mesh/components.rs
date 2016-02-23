@@ -55,15 +55,11 @@ impl<'a> Iterator for EdgeAdjacentVertIterator<'a> {
       0 => {
         self.count += 1;
         Some(self.start.origin.clone())
-        // self.start.upgrade().map(|start_rc| start_rc.borrow().origin.clone())
       },
       1 => {
         self.count += 1;
         self.start.next.upgrade()
           .map(|next_rc| next_rc.borrow().origin.clone())
-        // self.start.upgrade()
-        //   .and_then(|start_rc| start_rc.borrow().next.upgrade())
-        //   .map(|next_rc| next_rc.borrow().origin.clone())
       },
       _ => None,
     }
@@ -118,6 +114,35 @@ impl Iterator for VertAdjacentVertIterator {
           .and_then(|cur_rc: EdgeRcPtr| cur_rc.borrow().pair.upgrade())
           .map(|pair_rc: EdgeRcPtr| pair_rc.borrow().origin.clone());
       })
+  }
+}
+
+pub struct VertAdjacentEdgeIterator {
+  start: EdgePtr,
+  current: Option<EdgePtr>,
+}
+
+impl Iterator for VertAdjacentEdgeIterator {
+  type Item = EdgePtr;
+
+  fn next(&mut self) -> Option<EdgePtr> {
+    return self.current.clone()
+      .and_then(|cur_weak: EdgePtr| cur_weak.upgrade())
+      .and_then(|cur_rc: EdgeRcPtr| cur_rc.borrow().pair.upgrade())
+      .map(|pair_rc: EdgeRcPtr| pair_rc.borrow().next.clone())
+      .and_then(|next_weak: EdgePtr| {
+        return merge_upgrade(& next_weak, & self.start)
+          .and_then(|(next_rc, start_rc)| {
+            if next_rc != start_rc {
+              self.current = Some(next_weak.clone());
+              Some(next_weak.clone())
+            } else { None }
+          });
+      })
+      .or_else(|| {
+        self.current = Some(self.start.clone());
+        Some(self.start.clone())
+      });
   }
 }
 

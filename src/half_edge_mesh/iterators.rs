@@ -241,23 +241,31 @@ impl Iterator for FaceAdjacentVertIterator {
             cur_rc.borrow().origin.clone()
           });
       });
-
-    // This should be an equivalent calculation to the above:
-    // if let Some(cur_weak) = self.current.clone() {
-    //   if let Some(cur_rc) = cur_weak.upgrade() {
-    //     let new_weak: EdgePtr = cur_rc.borrow().next.clone();
-    //     if let (Some(next_rc), Some(start_rc)) = (new_weak.upgrade(), self.start.upgrade()) {
-    //       if next_rc != start_rc {
-    //         self.current = Some(new_weak);
-    //         Some(next_rc.borrow().origin.clone())
-    //       } else { None }
-    //     } else { None }
-    //   } else { None }
-    // } else {
-    //   if let Some(start_rc) = self.start.upgrade() {
-    //     self.current = Some(self.start.clone());
-    //     Some(start_rc.borrow().origin.clone())
-    //   } else { None }
-    // }
   }
+
+/*  
+  This should be an equivalent implementation of next() for this iterator.
+  Just shows off the alternative approach taken initially:
+
+  fn next(&mut self) -> Option<VertPtr> {
+    if let Some(cur_weak) = self.current.clone() {
+      if let Some(cur_rc) = cur_weak.upgrade() {
+        let new_weak: EdgePtr = cur_rc.borrow().next.clone();
+        if let (Some(next_rc), Some(start_rc)) = (new_weak.upgrade(), self.start.upgrade()) {
+          if next_rc != start_rc {
+            self.current = Some(new_weak);
+            Some(next_rc.borrow().origin.clone())
+          } else { None }
+        } else { None }
+      } else { None }
+    } else {
+      if let Some(start_rc) = self.start.upgrade() {
+        self.current = Some(self.start.clone());
+        Some(start_rc.borrow().origin.clone())
+      } else { None }
+    }
+  }
+*/
+
 }
+

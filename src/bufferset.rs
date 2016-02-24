@@ -8,6 +8,7 @@ use defs::*;
 use mesh::{Mesh};
 
 #[derive(Copy, Clone)]
+#[allow(unused_attributes)]
 #[repr="C"]
 pub struct Vert {
   a_pos: [f32; 3],

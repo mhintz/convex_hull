@@ -1,8 +1,6 @@
 use std::rc::{Rc, Weak};
-use std::cell::RefCell;
 
-use defs::*;
-
+#[allow(unused_imports)]
 use half_edge_mesh::components::{
   Edge, EdgePtr, EdgeRcPtr,
   Vert, VertPtr, VertRcPtr,
@@ -12,13 +10,6 @@ use half_edge_mesh::components::{
 fn merge_upgrade<T>(weak_a: & Weak<T>, weak_b: & Weak<T>) -> Option<(Rc<T>, Rc<T>)> {
   match (weak_a.upgrade(), weak_b.upgrade()) {
     (Some(strong_a), Some(strong_b)) => Some((strong_a, strong_b)),
-    _ => None
-  }
-}
-
-fn merge_options<T>(opt_a: Option<T>, opt_b: Option<T>) -> Option<(T, T)> {
-  match (opt_a, opt_b) {
-    (Some(val_a), Some(val_b)) => Some((val_a, val_b)),
     _ => None
   }
 }

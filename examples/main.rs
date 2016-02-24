@@ -1,12 +1,7 @@
 #[macro_use]
 extern crate glium;
 extern crate cgmath;
-extern crate itertools;
-
-mod defs;
-mod mesh;
-mod bufferset;
-mod half_edge_mesh;
+extern crate convex_hull;
 
 use std::io::prelude::*;
 use std::fs::File;
@@ -16,9 +11,9 @@ use glium::{DisplayBuild, Surface};
 
 use cgmath::{Vector3, EuclideanVector, Rotation3, Rad, Angle, Matrix, SquareMatrix};
 
-use defs::*;
-use mesh::*;
-use bufferset::*;
+use convex_hull::defs::*;
+use convex_hull::mesh::*;
+use convex_hull::bufferset::*;
 
 const WINDOW_WIDTH: u32 = 800;
 const WINDOW_HEIGHT: u32 = 800;
@@ -46,12 +41,12 @@ fn main() {
   let tet_buffer = BufferSet::from_mesh(& window, & tet_geom);
 
   // Vertex Shader
-  let mut vert_shader_file = File::open("src/shader/base.vs").unwrap();
+  let mut vert_shader_file = File::open("examples/shader/base.vs").unwrap();
   let mut vert_shader = String::new();
   vert_shader_file.read_to_string(&mut vert_shader).unwrap();
 
   // Fragment Shader
-  let mut frag_shader_file = File::open("src/shader/base.fs").unwrap();
+  let mut frag_shader_file = File::open("examples/shader/base.fs").unwrap();
   let mut frag_shader = String::new();
   frag_shader_file.read_to_string(&mut frag_shader).unwrap();
 
@@ -65,8 +60,8 @@ fn main() {
 
   let world_cam = Mat4::from_translation(Vec3::new(0.0, 0.0, 0.0));
 
-  // let projection: Mat4 = cgmath::ortho(-ASPECT_RATIO * AR_SCALE, ASPECT_RATIO * AR_SCALE, -AR_SCALE, AR_SCALE, NEAR_PLANE_Z, FAR_PLANE_Z);
-  let projection: Mat4 = cgmath::perspective(cgmath::Deg::new(40.0), ASPECT_RATIO, NEAR_PLANE_Z, FAR_PLANE_Z);
+  let ortho_projection: Mat4 = cgmath::ortho(-ASPECT_RATIO * AR_SCALE, ASPECT_RATIO * AR_SCALE, -AR_SCALE, AR_SCALE, NEAR_PLANE_Z, FAR_PLANE_Z);
+  let perspective_projection: Mat4 = cgmath::perspective(cgmath::Deg::new(40.0), ASPECT_RATIO, NEAR_PLANE_Z, FAR_PLANE_Z);
 
   // Draw Parameters
   let draw_params = glium::draw_parameters::DrawParameters {
@@ -97,7 +92,7 @@ fn main() {
     let basic_uniforms = uniform! {
       u_model_world: mat4_uniform(& model_matrix),
       u_world_cam: mat4_uniform(& world_cam),
-      u_projection: mat4_uniform(& projection),
+      u_projection: mat4_uniform(& perspective_projection),
       u_normal_world: mat4_uniform(& normal_world),
       u_normal_cam: mat4_uniform(& normal_cam)
     };

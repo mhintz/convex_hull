@@ -20,14 +20,12 @@ pub struct Edge {
   pub id: u32,
 }
 
-use std::iter::Chain;
-
 impl Edge {
   pub fn adjacent_verts<'a> (&'a self) -> EdgeAdjacentVertIterator<'a> {
     EdgeAdjacentVertIterator::new(self)
   }
 
-  pub fn adjacent_edges(& self) -> Chain<VertAdjacentEdgeIterator, VertAdjacentEdgeIterator> {
+  pub fn adjacent_edges(& self) -> EdgeAdjacentEdgeIterator {
     EdgeAdjacentEdgeIterator::new(self)
   }
 

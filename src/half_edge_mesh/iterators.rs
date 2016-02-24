@@ -58,37 +58,74 @@ impl<'a> Iterator for EdgeAdjacentVertIterator<'a> {
   }
 }
 
-pub struct EdgeAdjacentEdgeIterator;
+pub struct EdgeAdjacentEdgeIterator {
+  vert_iter_1: Option<VertAdjacentEdgeIterator>,
+  vert_iter_2: Option<VertAdjacentEdgeIterator>,
+  state: DualIterState,
+}
 
-use std::iter;
+// Implementation here is borrowed from std::iter::Chain
+#[derive(Clone)]
+enum DualIterState {
+  // both iterators running
+  Both,
+  // only first running
+  First,
+  // only second running
+  Second,
+  // neither works
+  // (this doesn't exist on the chain iterator,
+  // because both must be valid iterators,
+  // but it can exist here, in case the weak pointers fail to upgrade)
+  Neither
+}
 
 impl EdgeAdjacentEdgeIterator {
-  pub fn new<'a> (target: &'a Edge) -> iter::Chain<VertAdjacentEdgeIterator, VertAdjacentEdgeIterator> {
-    let edge_1_opt: Option<EdgePtr> = target.origin.upgrade()
-      .map(|vert_ptr_1: VertRcPtr| vert_ptr_1.borrow().edge.clone());
+  pub fn new(target: & Edge) -> EdgeAdjacentEdgeIterator {
+    let iter_1_opt: Option<VertAdjacentEdgeIterator> = target.origin.upgrade()
+      .map(|vert_ptr: VertRcPtr| vert_ptr.borrow().edge.clone())
+      .map(|vert_edge: EdgePtr| VertAdjacentEdgeIterator::new(vert_edge));
 
-    let edge_2_opt: Option<EdgePtr> = target.next.upgrade()
+    let iter_2_opt: Option<VertAdjacentEdgeIterator> = target.next.upgrade()
       .and_then(|edge_next: EdgeRcPtr| edge_next.borrow().origin.upgrade())
-      .map(|vert_ptr_2: VertRcPtr| vert_ptr_2.borrow().edge.clone());
+      .map(|vert_ptr: VertRcPtr| vert_ptr.borrow().edge.clone())
+      .map(|vert_edge: EdgePtr| VertAdjacentEdgeIterator::new(vert_edge));
 
-    return merge_options(edge_1_opt, edge_2_opt)
-      .map_or_else(|| {
-        iter::empty().chain(iter::empty())
-      }, |res: (EdgePtr, EdgePtr)| {
-        let edge_1: EdgePtr = res.0;
-        let edge_2: EdgePtr = res.1;
-        VertAdjacentEdgeIterator::new(edge_1.clone()).chain(VertAdjacentEdgeIterator::new(edge_2.clone()))
-      });
+    let state = match (iter_1_opt.as_ref(), iter_2_opt.as_ref()) {
+      (Some(_), Some(_)) => DualIterState::Both,
+      (Some(_), None) => DualIterState::First,
+      (None, Some(_)) => DualIterState::Second,
+      (None, None) => DualIterState::Neither
+    }; // <-- because this match is an assignment statement, this semicolon is essential
+
+    EdgeAdjacentEdgeIterator {
+      state: state,
+      vert_iter_1: iter_1_opt,
+      vert_iter_2: iter_2_opt
+    }
   }
 }
 
-// impl Iterator for EdgeAdjacentEdgeIterator {
-//   type Item = EdgePtr;
+impl Iterator for EdgeAdjacentEdgeIterator {
+  type Item = EdgePtr;
 
-//   fn next(&mut self) -> Option<EdgePtr> {
-
-//   }
-// }
+  fn next(&mut self) -> Option<EdgePtr> {
+    match self.state {
+      DualIterState::Both => {
+        match self.vert_iter_1.as_mut().unwrap().next() {
+          val @ Some(..) => val,
+          None => {
+            self.state = DualIterState::Second;
+            self.vert_iter_2.as_mut().unwrap().next()
+          }
+        }
+      },
+      DualIterState::First => self.vert_iter_1.as_mut().unwrap().next(),
+      DualIterState::Second => self.vert_iter_2.as_mut().unwrap().next(),
+      DualIterState::Neither => None,
+    }
+  }
+}
 
 // VertIterators
 

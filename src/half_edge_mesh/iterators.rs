@@ -16,15 +16,19 @@ fn merge_upgrade<T>(weak_a: & Weak<T>, weak_b: & Weak<T>) -> Option<(Rc<T>, Rc<T
 
 // EdgeIterators
 
+enum TwiceIterState {
+  First, Second, Done
+}
+
 pub struct EdgeAdjacentVertIterator<'a> {
-  count: u8,
+  state: TwiceIterState,
   start: &'a Edge,
 }
 
 impl<'a> EdgeAdjacentVertIterator<'a> {
   pub fn new(target: &'a Edge) -> EdgeAdjacentVertIterator<'a> {
     EdgeAdjacentVertIterator {
-      count: 0,
+      state: TwiceIterState::First,
       start: target,
     }
   }
@@ -34,17 +38,17 @@ impl<'a> Iterator for EdgeAdjacentVertIterator<'a> {
   type Item = VertPtr;
 
   fn next(&mut self) -> Option<VertPtr> {
-    match self.count {
-      0 => {
-        self.count += 1;
+    match self.state {
+      TwiceIterState::First => {
+        self.state = TwiceIterState::Second;
         Some(self.start.origin.clone())
       },
-      1 => {
-        self.count += 1;
+      TwiceIterState::Second => {
+        self.state = TwiceIterState::Done;
         self.start.next.upgrade()
           .map(|next_rc| next_rc.borrow().origin.clone())
       },
-      _ => None,
+      TwiceIterState::Done => None,
     }
   }
 }

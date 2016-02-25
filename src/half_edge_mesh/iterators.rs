@@ -192,7 +192,7 @@ impl Iterator for VertAdjacentEdgeIterator {
           .and_then(|(next_rc, start_rc)| {
             if next_rc != start_rc {
               self.current = Some(next_weak.clone());
-              Some(next_weak.clone())
+              Some(next_weak)
             } else { None }
           });
       })

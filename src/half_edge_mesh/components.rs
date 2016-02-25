@@ -53,7 +53,9 @@ impl Vert {
     VertAdjacentEdgeIterator::new(self.edge.clone())
   }
 
-  // pub fn adjacent_faces() -> VertAdjacentFaceIterator
+  pub fn adjacent_faces(& self) -> VertAdjacentFaceIterator {
+    VertAdjacentFaceIterator::new(self.edge.clone())
+  }
 }
 
 impl PartialEq<Vert> for Vert {

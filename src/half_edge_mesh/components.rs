@@ -29,7 +29,7 @@ impl Edge {
     EdgeAdjacentEdgeIterator::new(self)
   }
 
-  pub fn adjacent_faces(& self) -> EdgeAdjacentFaceIterator {
+  pub fn adjacent_faces<'a>(&'a self) -> EdgeAdjacentFaceIterator<'a> {
     EdgeAdjacentFaceIterator::new(self)
   }
 }

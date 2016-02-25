@@ -270,6 +270,41 @@ impl Iterator for FaceAdjacentVertIterator {
     }
   }
 */
-
 }
 
+pub struct FaceAdjacentEdgeIterator {
+  start: EdgePtr,
+  current: Option<EdgePtr>
+}
+
+impl FaceAdjacentEdgeIterator {
+  pub fn new(edge: EdgePtr) -> FaceAdjacentEdgeIterator {
+    FaceAdjacentEdgeIterator {
+      start: edge,
+      current: None
+    }
+  }
+}
+
+impl Iterator for FaceAdjacentEdgeIterator {
+  type Item = EdgePtr;
+
+  fn next(&mut self) -> Option<EdgePtr> {
+    return self.current.clone()
+      .and_then(|cur_weak: EdgePtr| cur_weak.upgrade())
+      .map(|cur_rc: EdgeRcPtr| cur_rc.borrow().next.clone())
+      .and_then(|next_weak: EdgePtr| {
+        return merge_upgrade(& next_weak, & self.start)
+          .and_then(|(next_rc, start_rc)| {
+            if next_rc != start_rc {
+              self.current = Some(next_weak.clone());
+              Some(next_weak)
+            } else { None }
+          });
+      })
+      .or_else(|| {
+        self.current = Some(self.start.clone());
+        Some(self.start.clone())
+      });
+  }
+}

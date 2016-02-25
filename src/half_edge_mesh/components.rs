@@ -70,7 +70,9 @@ impl Face {
     FaceAdjacentVertIterator::new(self.edge.clone())
   }
 
-  // pub fn adjacent_edges() -> FaceAdjacentFaceIterator
+  pub fn adjacent_edges(& self) -> FaceAdjacentEdgeIterator {
+    FaceAdjacentEdgeIterator::new(self.edge.clone())
+  }
 
   // pub fn adjacent_faces() -> FaceAdjacentFaceIterator
 }

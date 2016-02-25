@@ -29,7 +29,9 @@ impl Edge {
     EdgeAdjacentEdgeIterator::new(self)
   }
 
-  // pub fn adjacent_faces() -> EdgeAdjacentFaceIterator
+  pub fn adjacent_faces(& self) -> EdgeAdjacentFaceIterator {
+    EdgeAdjacentFaceIterator::new(self)
+  }
 }
 
 impl PartialEq<Edge> for Edge {
@@ -74,7 +76,9 @@ impl Face {
     FaceAdjacentEdgeIterator::new(self.edge.clone())
   }
 
-  // pub fn adjacent_faces() -> FaceAdjacentFaceIterator
+  // pub fn adjacent_faces(& self) -> FaceAdjacentFaceIterator {
+  //   FaceAdjacentFaceIterator::new()
+  // }
 }
 
 impl PartialEq<Face> for Face {

@@ -122,6 +122,39 @@ impl Iterator for EdgeAdjacentEdgeIterator {
   }
 }
 
+pub struct EdgeAdjacentFaceIterator<'a> {
+  start: &'a Edge,
+  state: TwiceIterState
+}
+
+impl<'a> EdgeAdjacentFaceIterator<'a> {
+  pub fn new(target: &'a Edge) -> EdgeAdjacentFaceIterator<'a> {
+    EdgeAdjacentFaceIterator {
+      start: target,
+      state: TwiceIterState::First
+    }
+  }
+}
+
+impl<'a> Iterator for EdgeAdjacentFaceIterator<'a> {
+  type Item = FacePtr;
+
+  fn next(&mut self) -> Option<FacePtr> {
+    match self.state {
+      TwiceIterState::First => {
+        self.state = TwiceIterState::Second;
+        Some(self.start.face.clone())
+      },
+      TwiceIterState::Second => {
+        self.state = TwiceIterState::Done;
+        self.start.pair.upgrade()
+          .map(|pair_rc: EdgeRcPtr| pair_rc.borrow().face.clone())
+      },
+      TwiceIterState::Done => None
+    }
+  }
+}
+
 // VertIterators
 
 pub struct VertAdjacentVertIterator {

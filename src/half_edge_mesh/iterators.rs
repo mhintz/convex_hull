@@ -380,3 +380,49 @@ impl Iterator for FaceAdjacentEdgeIterator {
       });
   }
 }
+
+pub struct FaceAdjacentFaceIterator {
+  start: EdgePtr,
+  current: Option<EdgePtr>,
+}
+
+impl FaceAdjacentFaceIterator {
+  pub fn new(edge: EdgePtr) -> FaceAdjacentFaceIterator {
+    FaceAdjacentFaceIterator {
+      start: edge,
+      current: None
+    }
+  }
+}
+
+impl Iterator for FaceAdjacentFaceIterator {
+  type Item = FacePtr;
+
+  fn next(&mut self) -> Option<FacePtr> {
+    // edge.pair.face
+    // edge -> edge.next
+    return self.current.clone()
+      .and_then(|cur_weak| cur_weak.upgrade())
+      .map(|cur_rc| cur_rc.borrow().next.clone())
+      .and_then(|next_weak| {
+        return merge_upgrade(& next_weak, & self.start)
+          .and_then(|(next_rc, start_rc)| {
+            if next_rc != start_rc {
+              next_rc.borrow().pair.upgrade()
+                .map(|pair_rc| {
+                  self.current = Some(next_weak);
+                  pair_rc.borrow().face.clone()
+                })
+            } else { None }
+          })
+      })
+      .or_else(|| {
+        self.start.upgrade()
+          .and_then(|edge_rc| edge_rc.borrow().pair.upgrade())
+          .map(|pair_rc| {
+            self.current = Some(self.start.clone());
+            pair_rc.borrow().face.clone()
+          })
+      });
+  }
+}

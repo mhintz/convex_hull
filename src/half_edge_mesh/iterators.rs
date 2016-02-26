@@ -26,7 +26,7 @@ pub struct EdgeAdjacentVertIterator<'a> {
 }
 
 impl<'a> EdgeAdjacentVertIterator<'a> {
-  pub fn new(target: &'a Edge) -> EdgeAdjacentVertIterator<'a> {
+  pub fn new(target: & Edge) -> EdgeAdjacentVertIterator {
     EdgeAdjacentVertIterator {
       state: TwiceIterState::First,
       start: target,
@@ -38,6 +38,7 @@ impl<'a> Iterator for EdgeAdjacentVertIterator<'a> {
   type Item = VertPtr;
 
   fn next(&mut self) -> Option<VertPtr> {
+    // edge.origin, edge.next.origin
     match self.state {
       TwiceIterState::First => {
         self.state = TwiceIterState::Second;
@@ -78,14 +79,14 @@ enum DualIterState {
 impl EdgeAdjacentEdgeIterator {
   pub fn new(target: & Edge) -> EdgeAdjacentEdgeIterator {
     let iter_1_opt: Option<VertAdjacentEdgeIterator> = target.origin.upgrade()
-      .map(|vert_ptr: VertRcPtr| vert_ptr.borrow().edge.clone())
-      .map(|vert_edge: EdgePtr| VertAdjacentEdgeIterator::new(vert_edge));
+      .map(|vert_ptr: VertRcPtr| vert_ptr.borrow().adjacent_edges());
 
     let iter_2_opt: Option<VertAdjacentEdgeIterator> = target.next.upgrade()
       .and_then(|edge_next: EdgeRcPtr| edge_next.borrow().origin.upgrade())
-      .map(|vert_ptr: VertRcPtr| vert_ptr.borrow().edge.clone())
-      .map(|vert_edge: EdgePtr| VertAdjacentEdgeIterator::new(vert_edge));
+      .map(|vert_ptr: VertRcPtr| vert_ptr.borrow().adjacent_edges());
 
+    // Flexible w.r.t. whether either pointer upgrade fails.
+    // is this expected behavior? I'm not positive
     let state = match (iter_1_opt.as_ref(), iter_2_opt.as_ref()) {
       (Some(_), Some(_)) => DualIterState::Both,
       (Some(_), None) => DualIterState::First,
@@ -105,9 +106,12 @@ impl Iterator for EdgeAdjacentEdgeIterator {
   type Item = EdgePtr;
 
   fn next(&mut self) -> Option<EdgePtr> {
+    // edge.origin.adjacent_edges(), edge.next.origin.adjacent_edges()
+    // unwraps are only OK here because of the nature of the constructor
     match self.state {
       DualIterState::Both => {
         match self.vert_iter_1.as_mut().unwrap().next() {
+          // val @ *pattern* binds val to the entire object, doesn't destructure the Option
           val @ Some(..) => val,
           None => {
             self.state = DualIterState::Second;
@@ -140,6 +144,7 @@ impl<'a> Iterator for EdgeAdjacentFaceIterator<'a> {
   type Item = FacePtr;
 
   fn next(&mut self) -> Option<FacePtr> {
+    // edge.face, edge.pair.face
     match self.state {
       TwiceIterState::First => {
         self.state = TwiceIterState::Second;
@@ -174,8 +179,9 @@ impl VertAdjacentVertIterator {
 impl Iterator for VertAdjacentVertIterator {
   type Item = VertPtr;
 
-  // edge.pair.origin, edge = edge.pair.next, edge != start
   fn next(&mut self) -> Option<VertPtr> {
+    // edge.pair.origin
+    // edge -> edge.pair.next
     return self.current.clone()
       .and_then(|cur_weak: EdgePtr| cur_weak.upgrade())
       .and_then(|cur_rc: EdgeRcPtr| cur_rc.borrow().pair.upgrade())
@@ -190,10 +196,12 @@ impl Iterator for VertAdjacentVertIterator {
           });
       })
       .or_else(|| {
-        self.current = Some(self.start.clone());
-        return self.start.upgrade()
+        self.start.upgrade()
           .and_then(|cur_rc: EdgeRcPtr| cur_rc.borrow().pair.upgrade())
-          .map(|pair_rc: EdgeRcPtr| pair_rc.borrow().origin.clone());
+          .map(|pair_rc: EdgeRcPtr| {
+            self.current = Some(self.start.clone());
+            pair_rc.borrow().origin.clone()
+          })
       })
   }
 }
@@ -216,6 +224,8 @@ impl Iterator for VertAdjacentEdgeIterator {
   type Item = EdgePtr;
 
   fn next(&mut self) -> Option<EdgePtr> {
+    // edge
+    // edge -> edge.pair.next
     return self.current.clone()
       .and_then(|cur_weak: EdgePtr| cur_weak.upgrade())
       .and_then(|cur_rc: EdgeRcPtr| cur_rc.borrow().pair.upgrade())
@@ -230,8 +240,11 @@ impl Iterator for VertAdjacentEdgeIterator {
           });
       })
       .or_else(|| {
-        self.current = Some(self.start.clone());
-        Some(self.start.clone())
+        self.start.upgrade()
+          .map(|_: EdgeRcPtr| {
+            self.current = Some(self.start.clone());
+            self.start.clone()
+          })
       });
   }
 }
@@ -254,6 +267,8 @@ impl Iterator for VertAdjacentFaceIterator {
   type Item = FacePtr;
 
   fn next(&mut self) -> Option<FacePtr> {
+    // edge.face
+    // edge -> edge.pair.next
     return self.current.clone()
       .and_then(|cur_weak: EdgePtr| cur_weak.upgrade())
       .and_then(|cur_rc: EdgeRcPtr| cur_rc.borrow().pair.upgrade())
@@ -262,15 +277,17 @@ impl Iterator for VertAdjacentFaceIterator {
         return merge_upgrade(& next_weak, & self.start)
           .and_then(|(next_rc, start_rc)| {
             if next_rc != start_rc {
-              self.current = Some(next_weak.clone());
+              self.current = Some(next_weak);
               Some(next_rc.borrow().face.clone())
             } else { None }
           })
       })
       .or_else(|| {
-        self.current = Some(self.start.clone());
         self.start.upgrade()
-          .map(|edge_rc| edge_rc.borrow().face.clone())
+          .map(|cur_rc: EdgeRcPtr| {
+            self.current = Some(self.start.clone());
+            cur_rc.borrow().face.clone()
+          })
       })
   }
 }
@@ -294,10 +311,9 @@ impl FaceAdjacentVertIterator {
 impl Iterator for FaceAdjacentVertIterator {
   type Item = VertPtr;
 
-  // edge.origin, edge = edge.next, edge != start
   fn next(&mut self) -> Option<VertPtr> {
-    // map: Option<T>, Function<T -> U> -> Option<U>
-    // and_then: Option<T>, Function<T -> Option<U>> -> Option<U>
+    // edge.origin
+    // edge -> edge.next
     return self.current.clone()
       .and_then(|cur_weak: EdgePtr| cur_weak.upgrade())
       .map(|cur_rc: EdgeRcPtr| cur_rc.borrow().next.clone())
@@ -307,41 +323,17 @@ impl Iterator for FaceAdjacentVertIterator {
             if next_rc != start_rc {
               self.current = Some(next_weak);
               Some(next_rc.borrow().origin.clone())
-            } else { None }            
+            } else { None }
           });
       })
       .or_else(|| {
-        return self.start.upgrade()
+        self.start.upgrade()
           .map(|cur_rc: EdgeRcPtr| {
             self.current = Some(self.start.clone());
             cur_rc.borrow().origin.clone()
-          });
+          })
       });
   }
-
-/*  
-  This should be an equivalent implementation of next() for this iterator.
-  Just shows off the alternative approach taken initially:
-
-  fn next(&mut self) -> Option<VertPtr> {
-    if let Some(cur_weak) = self.current.clone() {
-      if let Some(cur_rc) = cur_weak.upgrade() {
-        let new_weak: EdgePtr = cur_rc.borrow().next.clone();
-        if let (Some(next_rc), Some(start_rc)) = (new_weak.upgrade(), self.start.upgrade()) {
-          if next_rc != start_rc {
-            self.current = Some(new_weak);
-            Some(next_rc.borrow().origin.clone())
-          } else { None }
-        } else { None }
-      } else { None }
-    } else {
-      if let Some(start_rc) = self.start.upgrade() {
-        self.current = Some(self.start.clone());
-        Some(start_rc.borrow().origin.clone())
-      } else { None }
-    }
-  }
-*/
 }
 
 pub struct FaceAdjacentEdgeIterator {
@@ -362,6 +354,8 @@ impl Iterator for FaceAdjacentEdgeIterator {
   type Item = EdgePtr;
 
   fn next(&mut self) -> Option<EdgePtr> {
+    // edge
+    // edge -> edge.next
     return self.current.clone()
       .and_then(|cur_weak: EdgePtr| cur_weak.upgrade())
       .map(|cur_rc: EdgeRcPtr| cur_rc.borrow().next.clone())
@@ -402,9 +396,9 @@ impl Iterator for FaceAdjacentFaceIterator {
     // edge.pair.face
     // edge -> edge.next
     return self.current.clone()
-      .and_then(|cur_weak| cur_weak.upgrade())
-      .map(|cur_rc| cur_rc.borrow().next.clone())
-      .and_then(|next_weak| {
+      .and_then(|cur_weak: EdgePtr| cur_weak.upgrade())
+      .map(|cur_rc: EdgeRcPtr| cur_rc.borrow().next.clone())
+      .and_then(|next_weak: EdgePtr| {
         return merge_upgrade(& next_weak, & self.start)
           .and_then(|(next_rc, start_rc)| {
             if next_rc != start_rc {
@@ -414,12 +408,12 @@ impl Iterator for FaceAdjacentFaceIterator {
                   pair_rc.borrow().face.clone()
                 })
             } else { None }
-          })
+          });
       })
       .or_else(|| {
         self.start.upgrade()
-          .and_then(|edge_rc| edge_rc.borrow().pair.upgrade())
-          .map(|pair_rc| {
+          .and_then(|edge_rc: EdgeRcPtr| edge_rc.borrow().pair.upgrade())
+          .map(|pair_rc: EdgeRcPtr| {
             self.current = Some(self.start.clone());
             pair_rc.borrow().face.clone()
           })

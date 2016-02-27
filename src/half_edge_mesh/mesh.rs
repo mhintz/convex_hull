@@ -1,17 +1,12 @@
 use defs::*;
 
-#[allow(unused_imports)]
-use half_edge_mesh::components::{
-  Edge, EdgeRcPtr,
-  Vert, VertRcPtr,
-  Face, FaceRcPtr,
-};
+use half_edge_mesh::components::{Edge, Vert, Face};
+use half_edge_mesh::ptr::{Ptr, EdgeRc, VertRc, FaceRc};
 
 pub struct Mesh {
-  pub edges: Vec<EdgeRcPtr>,
-  pub vertices: Vec<VertRcPtr>,
-  pub faces: Vec<FaceRcPtr>,
-  pub name: String,
+  pub edges: Vec<EdgeRc>,
+  pub vertices: Vec<VertRc>,
+  pub faces: Vec<FaceRc>,
 }
 
 impl Mesh {

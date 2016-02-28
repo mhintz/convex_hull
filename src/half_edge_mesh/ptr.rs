@@ -10,6 +10,7 @@ pub type VertRc = Rc<RefCell<Vert>>;
 pub type FacePtr = Ptr<Face>;
 pub type FaceRc = Rc<RefCell<Face>>;
 
+#[derive(Debug)]
 pub struct Ptr<T> {
   val: Option<Weak<RefCell<T>>>
 }
@@ -49,4 +50,3 @@ impl<T> Clone for Ptr<T> {
     Ptr { val: self.val.clone() }
   }
 }
-

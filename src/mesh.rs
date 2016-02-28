@@ -117,9 +117,7 @@ pub fn construct_normals(vertices: & Vec<Pt>, indices: & Vec<Tri>) -> Vec<Vec3> 
   return normalized.collect::<Vec<Vec3>>();
 }
 
-pub fn get_tetrahedron() -> Mesh {
-  let mut tet = Mesh::new(PrimitiveType::TrianglesList);
-
+pub fn get_tetrahedron_points() -> [Pt; 4] {
   let two_pi: f32 = 2.0 * f32::consts::PI;
   let a0: f32 = two_pi * 0.0;
   let a1: f32 = two_pi * 1.0 / 3.0;
@@ -129,10 +127,23 @@ pub fn get_tetrahedron() -> Mesh {
   let distance_bottom: f32 = 1.0 - height; // Distance to the 'back' of the tetrahedron
   let distance_point: f32 = (0.5_f32).sqrt() * height;
 
-  tet.add_vert(Pt::new(0.0, 1.0, 0.0));
-  tet.add_vert(Pt::new(distance_point * a0.sin(), distance_bottom, distance_point * a0.cos()));
-  tet.add_vert(Pt::new(distance_point * a1.sin(), distance_bottom, distance_point * a1.cos()));
-  tet.add_vert(Pt::new(distance_point * a2.sin(), distance_bottom, distance_point * a2.cos()));
+  return [
+    Pt::new(0.0, 1.0, 0.0),
+    Pt::new(distance_point * a0.sin(), distance_bottom, distance_point * a0.cos()),
+    Pt::new(distance_point * a1.sin(), distance_bottom, distance_point * a1.cos()),
+    Pt::new(distance_point * a2.sin(), distance_bottom, distance_point * a2.cos()),
+  ];
+}
+
+pub fn get_tetrahedron() -> Mesh {
+  let mut tet = Mesh::new(PrimitiveType::TrianglesList);
+
+  let tet_pts = get_tetrahedron_points();
+
+  tet.add_vert(tet_pts[0]);
+  tet.add_vert(tet_pts[1]);
+  tet.add_vert(tet_pts[2]);
+  tet.add_vert(tet_pts[3]);
 
   tet.add_tri([0, 1, 2]);
   tet.add_tri([2, 3, 0]);
@@ -145,21 +156,36 @@ pub fn get_tetrahedron() -> Mesh {
   return tet;
 }
 
-pub fn get_cube() -> Mesh {
-  let mut cube = Mesh::new(PrimitiveType::TrianglesList);
-
+pub fn get_cube_points() -> [Pt; 8] {
   let irad = (1_f32 / 3_f32).sqrt();
   let diag = (2_f32 / 3_f32).sqrt();
   let zero = 0_f32;
 
-  cube.add_vert(Pt::new(zero, irad, diag));
-  cube.add_vert(Pt::new(diag, irad, zero));
-  cube.add_vert(Pt::new(zero, irad, -diag));
-  cube.add_vert(Pt::new(-diag, irad, zero));
-  cube.add_vert(Pt::new(-diag, -irad, zero));
-  cube.add_vert(Pt::new(zero, -irad, diag));
-  cube.add_vert(Pt::new(diag, -irad, zero));
-  cube.add_vert(Pt::new(zero, -irad, -diag));
+  return [
+    Pt::new(zero, irad, diag),
+    Pt::new(diag, irad, zero),
+    Pt::new(zero, irad, -diag),
+    Pt::new(-diag, irad, zero),
+    Pt::new(-diag, -irad, zero),
+    Pt::new(zero, -irad, diag),
+    Pt::new(diag, -irad, zero),
+    Pt::new(zero, -irad, -diag),
+  ];
+}
+
+pub fn get_cube() -> Mesh {
+  let mut cube = Mesh::new(PrimitiveType::TrianglesList);
+
+  let cube_pts = get_cube_points();
+
+  cube.add_vert(cube_pts[0]);
+  cube.add_vert(cube_pts[1]);
+  cube.add_vert(cube_pts[2]);
+  cube.add_vert(cube_pts[3]);
+  cube.add_vert(cube_pts[4]);
+  cube.add_vert(cube_pts[5]);
+  cube.add_vert(cube_pts[6]);
+  cube.add_vert(cube_pts[7]);
 
   // front top
   cube.add_tri([0, 1, 2]);

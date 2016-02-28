@@ -14,6 +14,7 @@ use cgmath::{Vector3, EuclideanVector, Rotation3, Rad, Angle, Matrix, SquareMatr
 use convex_hull::defs::*;
 use convex_hull::mesh::*;
 use convex_hull::bufferset::*;
+use convex_hull::half_edge_mesh::HalfEdgeMesh;
 
 const WINDOW_WIDTH: u32 = 800;
 const WINDOW_HEIGHT: u32 = 800;
@@ -34,6 +35,11 @@ fn main() {
     .build_glium().unwrap();
 
   // Geometry Data
+  let tet_pts = get_tetrahedron_points();
+  let tet_mesh = HalfEdgeMesh::from_tetrahedron_pts(tet_pts[0], tet_pts[1], tet_pts[2], tet_pts[3]);
+  let tet_he_mesh = Mesh::from_half_edge_mesh(& tet_mesh);
+  let tet_he_mesh_buffer = BufferSet::from_mesh(& window, & tet_he_mesh);
+
   let cube_geom = get_cube();
   let tet_geom = get_tetrahedron();
 

@@ -1,3 +1,4 @@
+use std;
 // TODO: make these classes generic over point type, vector type, and vertex data type
 use defs::*;
 use cgmath::Point; // Needed for Pt::origin()
@@ -82,6 +83,12 @@ impl PartialEq<Edge> for Edge {
   fn eq(& self, other: & Edge) -> bool { self.id == other.id }
 }
 
+impl std::fmt::Debug for Edge {
+  fn fmt(& self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+    write!(fmt, "Edge {{ id: {} }}", self.id)
+  }
+}
+
 pub struct Vert {
   pub edge: EdgePtr,
   pub pos: Pt,
@@ -133,6 +140,12 @@ impl Vert {
 
 impl PartialEq<Vert> for Vert {
   fn eq(& self, other: & Vert) -> bool { self.id == other.id }
+}
+
+impl std::fmt::Debug for Vert {
+  fn fmt(& self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+    write!(fmt, "Vert {{ id: {} }}", self.id)
+  }
 }
 
 pub struct Face {
@@ -213,4 +226,10 @@ impl Face {
 
 impl PartialEq<Face> for Face {
   fn eq(& self, other: & Face) -> bool { self.id == other.id }
+}
+
+impl std::fmt::Debug for Face {
+  fn fmt(& self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+    write!(fmt, "Face {{ id: {} }}", self.id)
+  }
 }

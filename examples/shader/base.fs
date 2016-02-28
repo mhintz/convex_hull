@@ -14,8 +14,9 @@ void main() {
   vec3 modifier = sin(incidence_level * 40) * cam_pos.xxx * cos(cam_norm * 2.0);
   float grey_level = clamp(incidence_level, 0.0, 1.0) * 0.15;
   // o_color = cam_pos;
+  // o_color = vec4(model_norm, 1.0);
   // o_color = vec4(normalize(world_norm), 1.0);
   // o_color = vec4(normalize(cam_norm), 1.0);
-  o_color = vec4(grey_level, grey_level, grey_level, 1.0);
-  // o_color = vec4(grey_level, grey_level, grey_level, 1.0) + vec4(modifier, 1.0);
+  // o_color = vec4(grey_level, grey_level, grey_level, 1.0);
+  o_color = vec4(grey_level, grey_level, grey_level, 1.0) + vec4(modifier, 1.0);
 }

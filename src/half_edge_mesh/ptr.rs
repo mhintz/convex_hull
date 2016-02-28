@@ -14,8 +14,6 @@ pub struct Ptr<T> {
   val: Option<Weak<RefCell<T>>>
 }
 
-fn getup<T>(v: & Weak<RefCell<T>>) -> Option<Rc<RefCell<T>>> { v.upgrade() }
-
 impl<T> Ptr<T> {
   pub fn new_rc(val: T) -> Rc<RefCell<T>> { Rc::new(RefCell::new(val)) }
 
@@ -38,7 +36,7 @@ impl<T> Ptr<T> {
   pub fn is_valid(& self) -> bool { self.val.is_some() && self.upgrade().is_some() }
 
   pub fn upgrade(& self) -> Option<Rc<RefCell<T>>> {
-    self.val.as_ref().and_then(getup)
+    self.val.as_ref().and_then(|v| v.upgrade())
   }
 
   // pub fn as_ref(& self) -> Option<& Weak<RefCell<T>>> {

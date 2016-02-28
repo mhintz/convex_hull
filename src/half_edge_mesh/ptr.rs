@@ -17,6 +17,8 @@ pub struct Ptr<T> {
 fn getup<T>(v: & Weak<RefCell<T>>) -> Option<Rc<RefCell<T>>> { v.upgrade() }
 
 impl<T> Ptr<T> {
+  pub fn new_rc(val: T) -> Rc<RefCell<T>> { Rc::new(RefCell::new(val)) }
+
   pub fn new(val: & Rc<RefCell<T>>) -> Ptr<T> {
     Ptr { val: Some(Rc::downgrade(val)) }
   }

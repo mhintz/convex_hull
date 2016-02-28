@@ -149,9 +149,9 @@ impl Face {
 
     self.center = center / count;
 
-    let vertA = vert_list[0].borrow().get_pos();
-    let s1 = vert_list[1].borrow().get_pos() - vertA;
-    let s2 = vert_list[2].borrow().get_pos() - vertA;
+    let vert_a = vert_list[0].borrow().get_pos();
+    let s1 = vert_list[1].borrow().get_pos() - vert_a;
+    let s2 = vert_list[2].borrow().get_pos() - vert_a;
     self.normal = s1.cross(s2).normalize();
   }
 

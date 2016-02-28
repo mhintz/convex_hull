@@ -5,7 +5,7 @@ use defs::*;
 use half_edge_mesh::components::{Edge, Vert, Face};
 use half_edge_mesh::ptr::{Ptr, EdgeRc, VertRc, FaceRc};
 
-pub struct Mesh {
+pub struct HalfEdgeMesh {
   pub edges: Vec<EdgeRc>,
   pub vertices: Vec<VertRc>,
   pub faces: Vec<FaceRc>,
@@ -64,7 +64,7 @@ fn vert_ba_key(e: & EdgeRc) -> Option<(u32, u32)> { vert_ab_key(e).map(|tuple| (
 
 // Takes what is assumed to be a fully-connected mesh, with no
 // pair links, and establishes pair links between adjacent edges
-pub fn connect_pairs(mesh: &mut Mesh) -> Result<(), &'static str> {
+pub fn connect_pairs(mesh: &mut HalfEdgeMesh) -> Result<(), &'static str> {
   // Two-stage algorithm: first collect all edge A -> B relationships,
   // Then go through and look for edges that are B -> A
   let mut edge_hash: HashMap<(u32, u32), & EdgeRc> = HashMap::new();
@@ -112,16 +112,16 @@ fn report_connect_err(res: Result<(), &str>) {
   }
 }
 
-impl Mesh {
-  pub fn empty() -> Mesh {
-    Mesh { edges: vec![], vertices: vec![], faces: vec![], }
+impl HalfEdgeMesh {
+  pub fn empty() -> HalfEdgeMesh {
+    HalfEdgeMesh { edges: vec![], vertices: vec![], faces: vec![], }
   }
 
   // A half-edge mesh requires at least a tetrahedron to be valid
   // p1: apex, p2: bottom left front, p3: bottom right front, p4: bottom rear
-  pub fn from_tetrahedron_pts(p1: Pt, p2: Pt, p3: Pt, p4: Pt) -> Mesh {
+  pub fn from_tetrahedron_pts(p1: Pt, p2: Pt, p3: Pt, p4: Pt) -> HalfEdgeMesh {
     // In progress
-    let mut mesh = Mesh::empty();
+    let mut mesh = HalfEdgeMesh::empty();
 
     let v1 = Ptr::new_rc(Vert::empty(p1));
     let v2 = Ptr::new_rc(Vert::empty(p2));
@@ -141,8 +141,8 @@ impl Mesh {
   }
 
   // p1: top apex, p2: mid left front, p3: mid right front, p4: mid left back, p5: mid right back, p6: bottom apex
-  pub fn from_octahedron_pts(p1: Pt, p2: Pt, p3: Pt, p4: Pt, p5: Pt, p6: Pt) -> Mesh {
-    let mut mesh = Mesh::empty();
+  pub fn from_octahedron_pts(p1: Pt, p2: Pt, p3: Pt, p4: Pt, p5: Pt, p6: Pt) -> HalfEdgeMesh {
+    let mut mesh = HalfEdgeMesh::empty();
 
     let v1 = Ptr::new_rc(Vert::empty(p1));
     let v2 = Ptr::new_rc(Vert::empty(p2));

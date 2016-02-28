@@ -79,12 +79,33 @@ impl Mesh {
     return mesh;
   }
 
-  #[allow(unused_variables)]
+  // p1: top apex, p2: mid left front, p3: mid right front, p4: mid left back, p5: mid right back, p6: bottom apex
   pub fn from_octahedron_pts(p1: Pt, p2: Pt, p3: Pt, p4: Pt, p5: Pt, p6: Pt) -> Mesh {
-    unimplemented!();
+    let mut mesh = Mesh::empty();
+
+    let v1 = Ptr::new_rc(Vert::empty(p1));
+    let v2 = Ptr::new_rc(Vert::empty(p2));
+    let v3 = Ptr::new_rc(Vert::empty(p3));
+    let v4 = Ptr::new_rc(Vert::empty(p4));
+    let v5 = Ptr::new_rc(Vert::empty(p5));
+    let v6 = Ptr::new_rc(Vert::empty(p6));
+
+    mesh.add_triangle(make_triangle(& v1, & v2, & v3));
+    mesh.add_triangle(make_triangle(& v1, & v4, & v2));
+    mesh.add_triangle(make_triangle(& v1, & v5, & v3));
+    mesh.add_triangle(make_triangle(& v1, & v5, & v4));
+    mesh.add_triangle(make_triangle(& v6, & v2, & v3));
+    mesh.add_triangle(make_triangle(& v6, & v4, & v2));
+    mesh.add_triangle(make_triangle(& v6, & v5, & v3));
+    mesh.add_triangle(make_triangle(& v6, & v4, & v5));
+
+    mesh.move_verts(vec![v1, v2, v3, v4, v5, v6]);
+
+    connect_pairs(&mut mesh);
+
+    return mesh;
   }
 
-  #[allow(unused_variables)]
   pub fn from_face_vertex_mesh(vertices: & Vec<Pt>, indices: & Vec<Tri>) {
     unimplemented!();
   }

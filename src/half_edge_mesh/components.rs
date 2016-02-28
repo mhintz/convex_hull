@@ -36,13 +36,31 @@ impl Edge {
     }
   }
 
+  pub fn with_origin(origin: VertPtr) -> Edge {
+    Edge {
+      id: get_edge_id(),
+      next: EdgePtr::empty(),
+      pair: EdgePtr::empty(),
+      origin: origin,
+      face: FacePtr::empty(),
+    }
+  }
+
+  pub fn take_next(&mut self, next: EdgePtr) { self.next = next; }
+
   pub fn set_next(&mut self, next: & EdgePtr) { self.next = next.clone(); }
 
+  pub fn take_pair(&mut self, pair: EdgePtr) { self.pair = pair; }
+
   pub fn set_pair(&mut self, pair: & EdgePtr) { self.pair = pair.clone(); }
+
+  pub fn take_origin(&mut self, origin: VertPtr) { self.origin = origin; }
 
   pub fn set_origin(&mut self, origin: & VertPtr) { self.origin = origin.clone(); }
 
   pub fn set_face(&mut self, face: & FacePtr) { self.face = face.clone(); }
+
+  pub fn take_face(&mut self, face: FacePtr) { self.face = face; }
 
   // The tests in this function are in order of "subjective likeliness of being invalid"
   pub fn is_valid(& self) -> bool { self.pair.is_valid() && self.face.is_valid() && self.origin.is_valid() && self.next.is_valid() }
@@ -80,6 +98,17 @@ impl Vert {
       pos: pos,
     }
   }
+
+  // Vertex connected to an existing edge
+  pub fn with_edge(pos: Pt, edge: EdgePtr) -> Vert {
+    Vert {
+      id: get_vert_id(),
+      edge: edge,
+      pos: pos,
+    }
+  }
+
+  pub fn take_edge(&mut self, edge: EdgePtr) { self.edge = edge; }
 
   pub fn set_edge(&mut self, edge: & EdgePtr) { self.edge = edge.clone(); }
 
@@ -125,12 +154,26 @@ impl Face {
     }
   }
 
+  // Face connected to an existing edge
+  pub fn with_edge(edge: EdgePtr) -> Face {
+    Face {
+      id: get_face_id(),
+      edge: edge,
+      normal: Vec3::unit_z(),
+      center: Pt::origin(),
+    }
+  }
+
+  pub fn take_edge(&mut self, edge: EdgePtr) { self.edge = edge; }
+
   pub fn set_edge(&mut self, edge: & EdgePtr) { self.edge = edge.clone(); }
 
   pub fn is_valid(& self) -> bool { self.edge.is_valid() }
 
   pub fn num_vertices(& self) -> usize { self.adjacent_verts().count() }
 
+  // Note: this only works when edges and verts are properly connected
+  // So wait for the right time during initialization to run this
   pub fn compute_attrs(&mut self) {
     let mut center = Pt::origin();
     let mut count: f32 = 0.0;

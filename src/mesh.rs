@@ -8,6 +8,8 @@ use cgmath::Vector;
 
 use defs::*;
 
+use half_edge_mesh::HalfEdgeMesh;
+
 pub struct Mesh {
   pub vert: Vec<Pt>,
   pub norm: Vec<Vec3>,
@@ -23,6 +25,23 @@ impl Mesh {
       index: Vec::<Tri>::new(),
       primitive: primtype
     }
+  }
+
+  pub fn from_half_edge_mesh(he_mesh: & HalfEdgeMesh) -> Mesh {
+    let mut mesh = Mesh::new(PrimitiveType::TrianglesList);
+
+    for face in he_mesh.faces.iter() {
+      face.borrow_mut().compute_attrs();
+      let face_norm = face.borrow().normal.clone();
+      for vert in face.borrow().adjacent_verts().filter_map(|v| v.upgrade()) {
+        mesh.add_vert(vert.borrow().pos.clone());
+        mesh.add_norm(face_norm);
+      }
+      let ln = mesh.vert.len();
+      mesh.add_tri([ln - 3, ln - 2, ln - 1]);
+    }
+
+    return mesh;
   }
 
   pub fn add_vert(&mut self, v: Pt) {

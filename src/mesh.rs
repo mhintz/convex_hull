@@ -124,20 +124,6 @@ pub fn get_tetrahedron() -> Mesh {
   tet.norm = construct_normals(& tet.vert, & tet.index);
 
   return tet;
-
-  // let v1 = vec3.fromValues(0, 0, 1);
-  // let v2 = vec3.fromValues(dPoint * Math.cos(a0), dPoint * Math.sin(a0), dBack);
-  // let v3 = vec3.fromValues(dPoint * Math.cos(a1), dPoint * Math.sin(a1), dBack);
-  // let v4 = vec3.fromValues(dPoint * Math.cos(a2), dPoint * Math.sin(a2), dBack);
-
-  // let vertices = [ v1, v2, v3, v4 ];
-
-  // let triangles = [];
-
-  // triangles.push([0, 1, 2]);
-  // triangles.push([2, 3, 0]);
-  // triangles.push([3, 1, 0]);
-  // triangles.push([1, 3, 2]);
 }
 
 pub fn get_cube() -> Mesh {

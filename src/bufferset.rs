@@ -6,6 +6,7 @@ use itertools::{Zip};
 
 use defs::*;
 use mesh::{Mesh};
+use half_edge_mesh::HalfEdgeMesh;
 
 #[derive(Copy, Clone)]
 #[allow(unused_attributes)]
@@ -56,5 +57,10 @@ impl BufferSet {
       indices: IndexBuffer::new(gl, mesh.primitive, & i_buffer[..]).unwrap(),
       vertices: VertexBuffer::new(gl, & v_buffer[..]).unwrap()
     }
+  }
+
+  // Creates a bufferset from a HalfEdgeMesh
+  pub fn from_half_edge_mesh(gl: & Facade, mesh: & HalfEdgeMesh) -> BufferSet {
+    unimplemented!();
   }
 }

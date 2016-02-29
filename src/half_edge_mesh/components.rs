@@ -10,6 +10,7 @@ use half_edge_mesh::iterators::*;
 
 // Please, don't make more than 2^32-1 edges, vertices, or faces
 // TODO: better ids (mesh-specific?)
+// Maybe use this: https://crates.io/crates/snowflake
 static mut edge_id: u32 = 0;
 static mut vert_id: u32 = 0;
 static mut face_id: u32 = 0;

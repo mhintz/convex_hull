@@ -3,8 +3,11 @@ use std::collections::HashMap;
 use defs::*;
 
 use half_edge_mesh::components::{Edge, Vert, Face};
-use half_edge_mesh::ptr::{Ptr, EdgeRc, VertRc, FaceRc};
+use half_edge_mesh::ptr::{Ptr, EdgeRc, VertRc, FaceRc, EdgePtr, VertPtr, FacePtr};
 
+/// Half-Edge Mesh data structure
+/// While it's possible to create non-triangular faces, this code assumes
+/// triangular faces in several locations
 pub struct HalfEdgeMesh {
   pub edges: Vec<EdgeRc>,
   pub vertices: Vec<VertRc>,
@@ -194,5 +197,50 @@ impl HalfEdgeMesh {
     self.edges.push(triangle.1);
     self.edges.push(triangle.2);
     self.edges.push(triangle.3);
+  }
+
+  // Checks if two faces are adjacent by looking for a shared edge
+  pub fn are_faces_adjacent(& self, face_l: & FacePtr, face_r: & FacePtr) -> bool {
+    unimplemented!();
+  }
+
+  // Replace a face with three faces, each connected to the new point
+  // And one of the face's previous vertices
+  pub fn triangulate_face(&mut self, point: Pt, face: & FacePtr) {
+    unimplemented!();
+    // find face
+    // get face edges
+    // get face vertexes
+    // remove face and face edges
+    // Add the three new faces - one attached to each pair of the original face's vertices, and the point
+    // 0, p, 1; 1, p, 2; 2, p, 0;
+  }
+
+  // Attach a point to a mesh, replacing many faces (used for the convex hull algorithm)
+  // The faces should be a continuously connected group, each adjacent pair of vertices
+  // in the border of this group are connected to the point in a new triangular face.
+  pub fn attach_point_for_faces(&mut self, point: Pt, faces: & Vec<VertPtr>) {
+    unimplemented!();
+  }
+
+  // This function should only work if the vertex has exactly three adjacent edges.
+  // Therefore, it has three adjacent faces.
+  // The vertices connected to those edges form a new face, and the faces and edges connected
+  // to the removed vertex are also removed
+  pub fn remove_point(&mut self, point: & VertPtr) {
+    unimplemented!();
+  }
+
+  // flips an edge between two faces so that the faces are each split by
+  // the other diagonal of the parallelogram they form.
+  pub fn flip_edge(&mut self, edge: & EdgePtr) {
+    unimplemented!();
+  }
+
+  // Inserts a vertex at the position, specified by tval, along edge.origin -> edge.next.origin
+  // The edge's two neighboring faces are each split into two faces.
+  // All four new faces include the new vertex
+  pub fn split_edge(&mut self, edge: & EdgePtr, tval: f32) {
+    unimplemented!();
   }
 }

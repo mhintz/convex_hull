@@ -1,11 +1,11 @@
-use glium::backend::{Facade};
+use glium::backend::Facade;
 use glium::index::{PrimitiveType, IndexBuffer};
-use glium::vertex::{VertexBuffer};
+use glium::vertex::VertexBuffer;
 
-use itertools::{Zip};
+use itertools::Zip;
 
 use defs::*;
-use mesh::{Mesh};
+use mesh::Mesh;
 use half_edge_mesh::HalfEdgeMesh;
 
 #[derive(Copy, Clone)]
@@ -21,8 +21,8 @@ implement_vertex!(Vert, a_pos, a_norm);
 impl Vert {
   pub fn new(pos: & [f32; 3], norm: & [f32; 3]) -> Vert {
     Vert {
-      a_pos: [pos[0], pos[1], pos[2]],
-      a_norm: [norm[0], norm[1], norm[2]]
+      a_pos: pos.clone(),
+      a_norm: norm.clone(),
     }
   }
 }

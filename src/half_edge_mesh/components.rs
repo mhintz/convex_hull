@@ -191,9 +191,7 @@ impl Face {
     let mut center = Pt::origin();
     let mut count: f32 = 0.0;
 
-    let vert_list = self.adjacent_verts()
-      .filter_map(|v| v.upgrade())
-      .collect::<Vec<VertRc>>();
+    let vert_list: Vec<VertRc> = self.adjacent_verts().to_ptr_vec();
 
     for vert in & vert_list {
       let pos = vert.borrow().get_pos();

@@ -1,11 +1,28 @@
+use std::rc::Rc;
+use std::cell::RefCell;
+
 use half_edge_mesh::components::{Edge, /*Vert, Face*/};
 use half_edge_mesh::ptr::{
+  Ptr,
   EdgePtr, EdgeRc,
   VertPtr, VertRc,
   FacePtr, /*FaceRc,*/
 };
 
-use half_edge_mesh::ptr::Ptr;
+// ToPtrVec
+
+// A trait for converting an interator of Ptr<T>
+// into a vector of Rc<RefCell<T>>
+pub trait ToPtrVec<T> where Self: Iterator<Item=Ptr<T>> {
+  fn to_ptr_vec(self) -> Vec<Rc<RefCell<T>>>;
+}
+
+// Implement the trait for all iterators over Ptr<T> (all the iterators here)
+impl<I, T> ToPtrVec<T> for I where I: Iterator<Item=Ptr<T>> {
+  fn to_ptr_vec(self) -> Vec<Rc<RefCell<T>>> {
+    self.filter_map(|v| v.upgrade()).collect()
+  }
+}
 
 // EdgeIterators
 

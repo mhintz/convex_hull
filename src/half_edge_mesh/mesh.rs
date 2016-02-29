@@ -129,7 +129,7 @@ impl HalfEdgeMesh {
     let v4 = Ptr::new_rc(Vert::empty(p4));
 
     mesh.add_triangle(make_triangle(& v1, & v2, & v3));
-    mesh.add_triangle(make_triangle(& v2, & v4, & v1));
+    mesh.add_triangle(make_triangle(& v2, & v1, & v4));
     mesh.add_triangle(make_triangle(& v3, & v4, & v1));
     mesh.add_triangle(make_triangle(& v4, & v3, & v2));
 
@@ -153,10 +153,10 @@ impl HalfEdgeMesh {
 
     mesh.add_triangle(make_triangle(& v1, & v2, & v3));
     mesh.add_triangle(make_triangle(& v1, & v4, & v2));
-    mesh.add_triangle(make_triangle(& v1, & v5, & v3));
+    mesh.add_triangle(make_triangle(& v1, & v3, & v5));
     mesh.add_triangle(make_triangle(& v1, & v5, & v4));
-    mesh.add_triangle(make_triangle(& v6, & v2, & v3));
-    mesh.add_triangle(make_triangle(& v6, & v4, & v2));
+    mesh.add_triangle(make_triangle(& v6, & v3, & v2));
+    mesh.add_triangle(make_triangle(& v6, & v2, & v4));
     mesh.add_triangle(make_triangle(& v6, & v5, & v3));
     mesh.add_triangle(make_triangle(& v6, & v4, & v5));
 

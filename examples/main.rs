@@ -19,7 +19,7 @@ use convex_hull::half_edge_mesh::HalfEdgeMesh;
 const WINDOW_WIDTH: u32 = 800;
 const WINDOW_HEIGHT: u32 = 800;
 const ASPECT_RATIO: f32 = (WINDOW_WIDTH as f32) / (WINDOW_HEIGHT as f32);
-const AR_SCALE: f32 = 1.3;
+// const AR_SCALE: f32 = 1.3;
 const NEAR_PLANE_Z: f32 = 0.5;
 const FAR_PLANE_Z: f32 = 1000.0;
 
@@ -36,15 +36,14 @@ fn main() {
 
   // Geometry Data
   let tet_pts = get_tetrahedron_points();
-  let tet_mesh = HalfEdgeMesh::from_tetrahedron_pts(tet_pts[0], tet_pts[1], tet_pts[2], tet_pts[3]);
-  let tet_he_mesh = Mesh::from_half_edge_mesh(& tet_mesh);
-  let tet_he_mesh_buffer = BufferSet::from_mesh(& window, & tet_he_mesh);
+  let tet_he_mesh = HalfEdgeMesh::from_tetrahedron_pts(tet_pts[0], tet_pts[1], tet_pts[2], tet_pts[3]);
+  let tet_mesh = Mesh::from_half_edge_mesh(& tet_he_mesh);
+  let tet_he_mesh_buffer = BufferSet::from_mesh(& window, & tet_mesh);
 
-  let cube_geom = get_cube();
-  let tet_geom = get_tetrahedron();
-
-  let cube_buffer = BufferSet::from_mesh(& window, & cube_geom);
-  let tet_buffer = BufferSet::from_mesh(& window, & tet_geom);
+  let oct_pts = get_octahedron_points();
+  let oct_he_mesh = HalfEdgeMesh::from_octahedron_pts(oct_pts[0], oct_pts[1], oct_pts[2], oct_pts[3], oct_pts[4], oct_pts[5]);
+  let oct_mesh = Mesh::from_half_edge_mesh(& oct_he_mesh);
+  let oct_he_mesh_buffer = BufferSet::from_mesh(& window, & oct_mesh);
 
   // Vertex Shader
   let mut vert_shader_file = File::open("examples/shader/base.vs").unwrap();
@@ -66,7 +65,7 @@ fn main() {
 
   let world_cam = Mat4::from_translation(Vec3::new(0.0, 0.0, 0.0));
 
-  let ortho_projection: Mat4 = cgmath::ortho(-ASPECT_RATIO * AR_SCALE, ASPECT_RATIO * AR_SCALE, -AR_SCALE, AR_SCALE, NEAR_PLANE_Z, FAR_PLANE_Z);
+  // let ortho_projection: Mat4 = cgmath::ortho(-ASPECT_RATIO * AR_SCALE, ASPECT_RATIO * AR_SCALE, -AR_SCALE, AR_SCALE, NEAR_PLANE_Z, FAR_PLANE_Z);
   let perspective_projection: Mat4 = cgmath::perspective(cgmath::Deg::new(40.0), ASPECT_RATIO, NEAR_PLANE_Z, FAR_PLANE_Z);
 
   // Draw Parameters
@@ -103,9 +102,9 @@ fn main() {
       u_normal_cam: mat4_uniform(& normal_cam)
     };
 
-    target.draw(& tet_buffer.vertices, & tet_buffer.indices, & basic_program, & basic_uniforms, & draw_params).unwrap();
+    target.draw(& tet_he_mesh_buffer.vertices, & tet_he_mesh_buffer.indices, & basic_program, & basic_uniforms, & draw_params).unwrap();
 
-    target.draw(& cube_buffer.vertices, & cube_buffer.indices, & basic_program, & basic_uniforms, & draw_params).unwrap();
+    target.draw(& oct_he_mesh_buffer.vertices, & oct_he_mesh_buffer.indices, & basic_program, & basic_uniforms, & draw_params).unwrap();
 
     target.finish().unwrap();
 

@@ -216,3 +216,14 @@ pub fn get_cube() -> Mesh {
 
   return cube;
 }
+
+pub fn get_octahedron_points() -> [Pt; 6] {
+  [
+    Pt::new(0.0, 1.0, 0.0),
+    Pt::new(-1.0, 0.0, 0.0),
+    Pt::new(0.0, 0.0, 1.0),
+    Pt::new(0.0, 0.0, -1.0),
+    Pt::new(1.0, 0.0, 0.0),
+    Pt::new(0.0, -1.0, 0.0),
+  ]
+}

@@ -30,7 +30,7 @@ impl Mesh {
   pub fn from_half_edge_mesh(he_mesh: & HalfEdgeMesh) -> Mesh {
     let mut mesh = Mesh::new(PrimitiveType::TrianglesList);
 
-    for face in he_mesh.faces.iter() {
+    for face in he_mesh.faces.values() {
       face.borrow_mut().compute_attrs();
       let face_norm = face.borrow().normal.clone();
       for vert in face.borrow().adjacent_verts().filter_map(|v| v.upgrade()) {

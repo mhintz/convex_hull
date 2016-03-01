@@ -9,9 +9,9 @@ use half_edge_mesh::ptr::{Ptr, EdgeRc, VertRc, FaceRc, EdgePtr, VertPtr, FacePtr
 /// While it's possible to create non-triangular faces, this code assumes
 /// triangular faces in several locations
 pub struct HalfEdgeMesh {
-  pub edges: Vec<EdgeRc>,
-  pub vertices: Vec<VertRc>,
-  pub faces: Vec<FaceRc>,
+  pub edges: HashMap<u32, EdgeRc>,
+  pub vertices: HashMap<u32, VertRc>,
+  pub faces: HashMap<u32, FaceRc>,
 }
 
 // Takes three Rc<RefCell<Vert>>,
@@ -72,7 +72,7 @@ pub fn connect_pairs(mesh: &mut HalfEdgeMesh) -> Result<(), &'static str> {
   // Then go through and look for edges that are B -> A
   let mut edge_hash: HashMap<(u32, u32), & EdgeRc> = HashMap::new();
 
-  for ref edge in mesh.edges.iter() {
+  for ref edge in mesh.edges.values() {
     // The types returned by match arms must be the same,
     // hence the braces and semicolon used in the first branch
     match vert_ab_key(edge) {
@@ -82,7 +82,7 @@ pub fn connect_pairs(mesh: &mut HalfEdgeMesh) -> Result<(), &'static str> {
     }
   }
 
-  for ref edge in mesh.edges.iter() {
+  for ref edge in mesh.edges.values() {
     // This if statement should skip half the edges, because two
     // edge pairs are set each time it's true
     if !edge.borrow().pair.is_valid() {
@@ -117,7 +117,7 @@ fn report_connect_err(res: Result<(), &str>) {
 
 impl HalfEdgeMesh {
   pub fn empty() -> HalfEdgeMesh {
-    HalfEdgeMesh { edges: vec![], vertices: vec![], faces: vec![], }
+    HalfEdgeMesh { edges: HashMap::new(), vertices: HashMap::new(), faces: HashMap::new(), }
   }
 
   // A half-edge mesh requires at least a tetrahedron to be valid
@@ -174,29 +174,77 @@ impl HalfEdgeMesh {
     unimplemented!();
   }
 
-  pub fn push_edge(&mut self, edge: EdgeRc) { self.edges.push(edge); }
+  pub fn push_edge(&mut self, edge: EdgeRc) {
+    let key = edge.borrow().id;
+    self.edges.insert(key, edge);
+  }
 
-  pub fn extend_edges(&mut self, edges: & [EdgeRc]) { for edge in edges { self.edges.push(edge.clone()); } }
+  pub fn extend_edges(&mut self, edges: & [EdgeRc]) {
+    for edge in edges {
+      let key = edge.borrow().id;
+      self.edges.insert(key, edge.clone());
+    }
+  }
 
-  pub fn move_edges(&mut self, edges: Vec<EdgeRc>) { for edge in edges { self.edges.push(edge); } }
+  pub fn move_edges(&mut self, edges: Vec<EdgeRc>) {
+    for edge in edges {
+      let key = edge.borrow().id;
+      self.edges.insert(key, edge);
+    }
+  }
 
-  pub fn push_vert(&mut self, vert: VertRc) { self.vertices.push(vert); }
+  pub fn push_vert(&mut self, vert: VertRc) {
+    let key = vert.borrow().id;
+    self.vertices.insert(key, vert);
+  }
 
-  pub fn extend_verts(&mut self, verts: & [VertRc]) { for vert in verts { self.vertices.push(vert.clone()); } }
+  pub fn extend_verts(&mut self, verts: & [VertRc]) {
+    for vert in verts {
+      let key = vert.borrow().id;
+      self.vertices.insert(key, vert.clone());
+    }
+  }
 
-  pub fn move_verts(&mut self, verts: Vec<VertRc>) { for vert in verts { self.vertices.push(vert); } }
+  pub fn move_verts(&mut self, verts: Vec<VertRc>) {
+    for vert in verts {
+      let key = vert.borrow().id;
+      self.vertices.insert(key, vert);
+    }
+  }
 
-  pub fn push_face(&mut self, face: FaceRc) { self.faces.push(face); }
+  pub fn push_face(&mut self, face: FaceRc) {
+    let key = face.borrow().id;
+    self.faces.insert(key, face);
+  }
 
-  pub fn extend_faces(&mut self, faces: & [FaceRc]) { for face in faces { self.faces.push(face.clone()); } }
+  pub fn extend_faces(&mut self, faces: & [FaceRc]) {
+    for face in faces {
+      let key = face.borrow().id;
+      self.faces.insert(key, face.clone());
+    }
+  }
 
-  pub fn move_faces(&mut self, faces: Vec<FaceRc>) { for face in faces { self.faces.push(face); } }
+  pub fn move_faces(&mut self, faces: Vec<FaceRc>) {
+    for face in faces {
+      let key = face.borrow().id;
+      self.faces.insert(key, face);
+    }
+  }
 
   pub fn add_triangle(&mut self, triangle: (FaceRc, EdgeRc, EdgeRc, EdgeRc)) {
-    self.faces.push(triangle.0);
-    self.edges.push(triangle.1);
-    self.edges.push(triangle.2);
-    self.edges.push(triangle.3);
+    let mut key: u32;
+
+    key = triangle.0.borrow().id;
+    self.faces.insert(key, triangle.0);
+
+    key = triangle.1.borrow().id;
+    self.edges.insert(key, triangle.1);
+
+    key = triangle.2.borrow().id;
+    self.edges.insert(key, triangle.2);
+
+    key = triangle.3.borrow().id;
+    self.edges.insert(key, triangle.3);
   }
 
   // Checks if two faces are adjacent by looking for a shared edge

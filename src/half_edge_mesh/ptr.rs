@@ -40,9 +40,9 @@ impl<T> Ptr<T> {
     self.val.as_ref().and_then(|v| v.upgrade())
   }
 
-  // pub fn as_ref(& self) -> Option<& Weak<RefCell<T>>> {
-  //   self.val.as_ref()
-  // }
+  pub fn as_ref(& self) -> Option<& Weak<RefCell<T>>> {
+    self.val.as_ref()
+  }
 }
 
 impl<T> Clone for Ptr<T> {

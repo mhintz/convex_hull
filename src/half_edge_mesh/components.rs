@@ -84,6 +84,15 @@ impl PartialEq<Edge> for Edge {
   fn eq(& self, other: & Edge) -> bool { self.id == other.id }
 }
 
+impl Eq for Edge {}
+
+impl std::hash::Hash for Edge {
+  fn hash<H>(& self, state: &mut H) where H: std::hash::Hasher {
+    state.write_u32(self.id);
+    state.finish();
+  }
+}
+
 impl std::fmt::Debug for Edge {
   fn fmt(& self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
     write!(fmt, "Edge {{ id: {} }}", self.id)
@@ -141,6 +150,15 @@ impl Vert {
 
 impl PartialEq<Vert> for Vert {
   fn eq(& self, other: & Vert) -> bool { self.id == other.id }
+}
+
+impl Eq for Vert {}
+
+impl std::hash::Hash for Vert {
+  fn hash<H>(& self, state: &mut H) where H: std::hash::Hasher {
+    state.write_u32(self.id);
+    state.finish();
+  }
 }
 
 impl std::fmt::Debug for Vert {
@@ -225,6 +243,15 @@ impl Face {
 
 impl PartialEq<Face> for Face {
   fn eq(& self, other: & Face) -> bool { self.id == other.id }
+}
+
+impl Eq for Face {}
+
+impl std::hash::Hash for Face {
+  fn hash<H>(& self, state: &mut H) where H: std::hash::Hasher {
+    state.write_u32(self.id);
+    state.finish();
+  }
 }
 
 impl std::fmt::Debug for Face {

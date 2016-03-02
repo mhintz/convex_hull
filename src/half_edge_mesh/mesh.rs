@@ -309,6 +309,9 @@ impl HalfEdgeMesh {
       self.push_face(new_face);
     }
 
+    // This step is pretty crucial
+    self.push_vert(apex_vert);
+
     let trail_edge_len = new_trail_edges.len();
 
     // Should be 3, or else the faces are not triangular, or not enough edges were created

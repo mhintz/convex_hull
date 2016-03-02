@@ -212,7 +212,9 @@ impl Face {
 
     let vert_list: Vec<VertRc> = self.adjacent_verts().to_ptr_vec();
 
-    for vert in & vert_list {
+    debug_assert!(vert_list.len() == 3, "should have 3 adjacent vertices");
+
+    for vert in vert_list.iter() {
       let pos = vert.borrow().get_pos();
       center.x += pos.x;
       center.y += pos.y;
@@ -220,6 +222,7 @@ impl Face {
       count += 1.0;
     }
 
+    // Average position of the corner points
     self.center = center / count;
 
     let vert_a = vert_list[0].borrow().get_pos();

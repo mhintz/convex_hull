@@ -267,14 +267,15 @@ impl HalfEdgeMesh {
 
   // Replace a face with three faces, each connected to the new point
   // And one of the face's previous vertices
-  pub fn triangulate_face(&mut self, point: Pt, face: & FaceRc) {
+  pub fn triangulate_face(&mut self, point: Pt, target_face: & FaceRc) {
     // get face edges
-    let face_edges = face.borrow().adjacent_edges().to_ptr_vec();
+    let face_edges = target_face.borrow().adjacent_edges().to_ptr_vec();
     // get face vertexes, assumed to be counter-clockwise
-    let face_vertices = face.borrow().adjacent_verts().to_ptr_vec();
+    let face_vertices = target_face.borrow().adjacent_verts().to_ptr_vec();
     let vertices_len = face_vertices.len();
 
-    debug_assert_eq!(vertices_len, 3); // should be 3, or else your faces aren't triangles
+    debug_assert!(face_edges.len() == 3, "should be 3 adjacent edges");
+    debug_assert!(vertices_len == 3, "should be 3 adjacent vertices"); // should be 3, or else your faces aren't triangles
 
     let apex_vert = Ptr::new_rc(Vert::empty(point));
 
@@ -315,8 +316,8 @@ impl HalfEdgeMesh {
     let trail_edge_len = new_trail_edges.len();
 
     // Should be 3, or else the faces are not triangular, or not enough edges were created
-    debug_assert_eq!(trail_edge_len, 3);
-    debug_assert_eq!(new_lead_edges.len(), 3);
+    debug_assert!(trail_edge_len == 3, "should be 3 new trailing edges");
+    debug_assert!(new_lead_edges.len() == 3, "should be 3 new leading edges");
 
     // Connect pairs
     for (i, leading_edge) in new_lead_edges.iter().enumerate() {
@@ -327,7 +328,7 @@ impl HalfEdgeMesh {
 
     // Remove the face and the edges from the mesh.
     // When the local pointer to this falls out of scope, it should be deallocated
-    self.faces.remove(& face.borrow().id);
+    self.faces.remove(& target_face.borrow().id);
   }
 
   pub fn triangulate_face_ptr(&mut self, point: Pt, face: & FacePtr) {

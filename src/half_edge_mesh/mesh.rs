@@ -109,6 +109,11 @@ pub fn connect_pairs(mesh: &mut HalfEdgeMesh) -> Result<(), &'static str> {
   return Ok(());
 }
 
+// Checks if edge pair connections are all valid
+pub fn are_edge_pairs_valid(mesh: & HalfEdgeMesh) -> Result<(), &'static str> {
+  unimplemented!();
+}
+
 fn report_connect_err(res: Result<(), &str>) {
   match res {
     Err(e) => println!("Error connecting mesh pairs! Mesh is not valid! {}", e),

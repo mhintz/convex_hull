@@ -4,6 +4,7 @@ use defs::*;
 
 use half_edge_mesh::components::{Edge, Vert, Face};
 use half_edge_mesh::ptr::{Ptr, EdgeRc, VertRc, FaceRc, EdgePtr, VertPtr, FacePtr};
+use half_edge_mesh::iterators::ToPtrVec;
 
 /// Half-Edge Mesh data structure
 /// While it's possible to create non-triangular faces, this code assumes
@@ -261,14 +262,71 @@ impl HalfEdgeMesh {
 
   // Replace a face with three faces, each connected to the new point
   // And one of the face's previous vertices
-  pub fn triangulate_face(&mut self, point: Pt, face: & FacePtr) {
-    unimplemented!();
-    // find face
+  pub fn triangulate_face(&mut self, point: Pt, face: & FaceRc) {
     // get face edges
-    // get face vertexes
-    // remove face and face edges
-    // Add the three new faces - one attached to each pair of the original face's vertices, and the point
-    // 0, p, 1; 1, p, 2; 2, p, 0;
+    let face_edges = face.borrow().adjacent_edges().to_ptr_vec();
+    // get face vertexes, assumed to be counter-clockwise
+    let face_vertices = face.borrow().adjacent_verts().to_ptr_vec();
+    let vertices_len = face_vertices.len();
+
+    debug_assert_eq!(vertices_len, 3); // should be 3, or else your faces aren't triangles
+
+    let apex_vert = Ptr::new_rc(Vert::empty(point));
+
+    // Add the three new faces - one attached to each of the original face's edges,
+    // plus two new edges attached to the point
+    let mut new_lead_edges: Vec<EdgeRc> = Vec::new();
+    let mut new_trail_edges: Vec<EdgeRc> = Vec::new();
+    for (i, base_edge) in face_edges.iter().enumerate() {
+      // Might not be necessary
+      base_edge.borrow_mut().take_origin(Ptr::new(& face_vertices[i]));
+      base_edge.borrow().origin.upgrade().map(|o| o.borrow_mut().take_edge(Ptr::new(base_edge)));
+
+      let new_face = Ptr::new_rc(Face::with_edge(Ptr::new(base_edge)));
+      let leading_edge = Ptr::new_rc(Edge::with_origin(Ptr::new(& face_vertices[(i + 1) % vertices_len])));
+      let trailing_edge = Ptr::new_rc(Edge::with_origin(Ptr::new(& apex_vert)));
+
+      base_edge.borrow_mut().take_face(Ptr::new(& new_face));
+      leading_edge.borrow_mut().take_face(Ptr::new(& new_face));
+      trailing_edge.borrow_mut().take_face(Ptr::new(& new_face));
+
+      base_edge.borrow_mut().take_next(Ptr::new(& leading_edge));
+      leading_edge.borrow_mut().take_next(Ptr::new(& trailing_edge));
+      trailing_edge.borrow_mut().take_next(Ptr::new(base_edge));
+
+      apex_vert.borrow_mut().take_edge(Ptr::new(& trailing_edge));
+
+      new_lead_edges.push(leading_edge.clone());
+      new_trail_edges.push(trailing_edge.clone());
+
+      self.push_edge(leading_edge);
+      self.push_edge(trailing_edge);
+      self.push_face(new_face);
+    }
+
+    let trail_edge_len = new_trail_edges.len();
+
+    // Should be 3, or else the faces are not triangular, or not enough edges were created
+    debug_assert_eq!(trail_edge_len, 3);
+    debug_assert_eq!(new_lead_edges.len(), 3);
+
+    // Connect pairs
+    for (i, leading_edge) in new_lead_edges.iter().enumerate() {
+      let trailing_edge = & new_trail_edges[(i + 1) % trail_edge_len];
+      leading_edge.borrow_mut().take_pair(Ptr::new(& trailing_edge));
+      trailing_edge.borrow_mut().take_pair(Ptr::new(& leading_edge));
+    }
+
+    // Remove the face and the edges from the mesh.
+    // When the local pointer to this falls out of scope, it should be deallocated
+    self.faces.remove(& face.borrow().id);
+  }
+
+  pub fn triangulate_face_ptr(&mut self, point: Pt, face: & FacePtr) {
+    match face.upgrade() {
+      Some(face_rc) => self.triangulate_face(point, & face_rc),
+      None => (),
+    }
   }
 
   // Attach a point to a mesh, replacing many faces (used for the convex hull algorithm)

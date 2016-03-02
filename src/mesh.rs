@@ -8,7 +8,7 @@ use cgmath::Vector;
 
 use defs::*;
 
-use half_edge_mesh::HalfEdgeMesh;
+use half_edge_mesh::{HalfEdgeMesh, ToPtrVec};
 
 pub struct Mesh {
   pub vert: Vec<Pt>,
@@ -33,7 +33,7 @@ impl Mesh {
     for face in he_mesh.faces.values() {
       face.borrow_mut().compute_attrs();
       let face_norm = face.borrow().normal.clone();
-      for vert in face.borrow().adjacent_verts().filter_map(|v| v.upgrade()) {
+      for vert in face.borrow().adjacent_verts().to_ptr_vec() {
         mesh.add_vert(vert.borrow().pos.clone());
         mesh.add_norm(face_norm);
       }

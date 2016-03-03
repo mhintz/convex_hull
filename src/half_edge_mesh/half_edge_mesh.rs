@@ -196,7 +196,13 @@ impl HalfEdgeMesh {
 
   // Checks if two faces are adjacent by looking for a shared edge
   pub fn are_faces_adjacent(& self, face_l: & FaceRc, face_r: & FaceRc) -> bool {
-    unimplemented!();
+    face_l.borrow().adjacent_edges()
+      .any(|edge| {
+        edge.upgrade()
+          .and_then(|e| e.borrow().pair.upgrade())
+          .and_then(|e| e.borrow().face.upgrade())
+          .map(|f| f == * face_r) == Some(true)
+      })
   }
 
   pub fn are_face_ptrs_adjacent(& self, face_l: & FacePtr, face_r: & FacePtr) -> bool {

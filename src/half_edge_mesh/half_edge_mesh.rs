@@ -111,7 +111,36 @@ pub fn connect_pairs(mesh: &mut HalfEdgeMesh) -> Result<(), &'static str> {
 
 // Checks if edge pair connections are all valid
 pub fn are_edge_pairs_valid(mesh: & HalfEdgeMesh) -> Result<(), &'static str> {
-  unimplemented!();
+  let mut edge_hash: HashMap<(u32, u32), & EdgeRc> = HashMap::new();
+
+  for ref edge in mesh.edges.values() {
+    // The types returned by match arms must be the same,
+    // hence the braces and semicolon used in the first branch
+    match vert_ab_key(edge) {
+      Some(key) => { edge_hash.insert(key, edge); },
+      // This happens if one of the mesh edges doesn't have a valid .origin or .next.origin pointer
+      None => { return Err("Could not hash all mesh edges"); }
+    }
+  }
+
+  for ref edge in mesh.edges.values() {
+    match vert_ba_key(edge) {
+      Some(key) => {
+        match edge_hash.get(& key) {
+          Some(ref pair) => {
+            if (edge.borrow().pair.upgrade().as_ref() != Some(pair)) ||
+               (pair.borrow().pair.upgrade().as_ref() != Some(edge)) {
+                return Err("Pairs don't match");
+            }
+          },
+          None => { return Err("Could not find a pair edge"); }
+        }
+      },
+      None => { return Err("Could not find reverse hash for mesh edge"); }
+    }
+  }
+
+  return Ok(());
 }
 
 fn report_connect_err(res: Result<(), &str>) {

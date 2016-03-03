@@ -5,7 +5,7 @@ use cgmath::EuclideanVector;
 
 use defs::*;
 
-use half_edge_mesh::ptr::{EdgePtr, VertRc};
+use half_edge_mesh::ptr::{Ptr, EdgePtr, EdgeRc, VertRc};
 use half_edge_mesh::iterators::*;
 
 static mut face_id: u32 = 0;
@@ -44,6 +44,8 @@ impl Face {
   pub fn take_edge(&mut self, edge: EdgePtr) { self.edge = edge; }
 
   pub fn set_edge(&mut self, edge: & EdgePtr) { self.edge = edge.clone(); }
+
+  pub fn set_edge_rc(&mut self, edge: & EdgeRc) { self.edge = Ptr::new(edge); }
 
   pub fn is_valid(& self) -> bool { self.edge.is_valid() }
 

@@ -1,6 +1,6 @@
 use std;
 
-use half_edge_mesh::ptr::{EdgePtr, VertPtr, FacePtr};
+use half_edge_mesh::ptr::{Ptr, EdgePtr, VertPtr, FacePtr, EdgeRc, VertRc, FaceRc};
 use half_edge_mesh::iterators::*;
 
 // Please, don't make more than 2^32-1 edges, vertices, or faces
@@ -43,17 +43,25 @@ impl Edge {
 
   pub fn set_next(&mut self, next: & EdgePtr) { self.next = next.clone(); }
 
+  pub fn set_next_rc(&mut self, next: & EdgeRc) { self.next = Ptr::new(next); }
+
   pub fn take_pair(&mut self, pair: EdgePtr) { self.pair = pair; }
 
   pub fn set_pair(&mut self, pair: & EdgePtr) { self.pair = pair.clone(); }
+
+  pub fn set_pair_rc(&mut self, pair: & EdgeRc) { self.pair = Ptr::new(pair); }
 
   pub fn take_origin(&mut self, origin: VertPtr) { self.origin = origin; }
 
   pub fn set_origin(&mut self, origin: & VertPtr) { self.origin = origin.clone(); }
 
+  pub fn set_origin_rc(&mut self, origin: & VertRc) { self.origin = Ptr::new(origin); }
+
   pub fn set_face(&mut self, face: & FacePtr) { self.face = face.clone(); }
 
   pub fn take_face(&mut self, face: FacePtr) { self.face = face; }
+
+  pub fn set_face_rc(&mut self, face: & FaceRc) { self.face = Ptr::new(face); }
 
   // The tests in this function are in order of "subjective likeliness of being invalid"
   pub fn is_valid(& self) -> bool { self.pair.is_valid() && self.face.is_valid() && self.origin.is_valid() && self.next.is_valid() }

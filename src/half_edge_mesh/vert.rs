@@ -47,14 +47,17 @@ impl Vert {
 
   pub fn is_valid(& self) -> bool { self.edge.is_valid() }
 
+  /// Important: Iterates over the vertices connected to a vertex in *clockwise* order
   pub fn adjacent_verts(& self) -> VertAdjacentVertIterator {
     VertAdjacentVertIterator::new(self.edge.clone())
   }
 
+  /// Important: Iterates over the edges connected to a vertex in *clockwise* order
   pub fn adjacent_edges(& self) -> VertAdjacentEdgeIterator {
     VertAdjacentEdgeIterator::new(self.edge.clone())
   }
 
+  /// Important: Iterates over the faces connected to a vertex in *clockwise* order
   pub fn adjacent_faces(& self) -> VertAdjacentFaceIterator {
     VertAdjacentFaceIterator::new(self.edge.clone())
   }

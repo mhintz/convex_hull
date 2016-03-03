@@ -214,6 +214,7 @@ impl HalfEdgeMesh {
 
   // Replace a face with three faces, each connected to the new point
   // And one of the face's previous vertices
+  // TODO: Make all of these mesh-manipulation functions return a Result<(), &str> to check that manipulation was completed
   pub fn triangulate_face(&mut self, point: Pt, target_face: & FaceRc) {
     // get face edges
     let face_edges = target_face.borrow().adjacent_edges().to_ptr_vec();

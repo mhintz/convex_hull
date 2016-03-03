@@ -78,14 +78,17 @@ impl Face {
     self.normal = s1.cross(s2).normalize();
   }
 
+  /// Iterates over the vertices which make up the face in *counterclockwise* order
   pub fn adjacent_verts(& self) -> FaceAdjacentVertIterator {
     FaceAdjacentVertIterator::new(self.edge.clone())
   }
 
+  /// Iterates over the edges which make up the face in *counterclockwise* order
   pub fn adjacent_edges(& self) -> FaceAdjacentEdgeIterator {
     FaceAdjacentEdgeIterator::new(self.edge.clone())
   }
 
+  /// Iterates over the faces adjacent to this face in *counterclockwise* order
   pub fn adjacent_faces(& self) -> FaceAdjacentFaceIterator {
     FaceAdjacentFaceIterator::new(self.edge.clone())
   }

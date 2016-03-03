@@ -18,6 +18,8 @@ pub struct Edge {
   pub id: u32,
 }
 
+// TODO: change the name of set_*_rc to just set_*, and change the current set_* to set_*_ptr
+// because set_*_rc is used way more than set_* at the moment.
 impl Edge {
   pub fn empty() -> Edge {
     Edge {
@@ -66,14 +68,21 @@ impl Edge {
   // The tests in this function are in order of "subjective likeliness of being invalid"
   pub fn is_valid(& self) -> bool { self.pair.is_valid() && self.face.is_valid() && self.origin.is_valid() && self.next.is_valid() }
 
+  /// Yields edge.origin, then edge.next.origin
+  /// Gives you first the source of the half-edge, and then its target
   pub fn adjacent_verts<'a> (&'a self) -> EdgeAdjacentVertIterator<'a> {
     EdgeAdjacentVertIterator::new(self)
   }
 
+  /// Gives you the edges connected to the source of the half-edge first (in *clockwise* order)
+  /// and then the edges connected to the target of the half-edge (also *clockwise* order)
   pub fn adjacent_edges(& self) -> EdgeAdjacentEdgeIterator {
     EdgeAdjacentEdgeIterator::new(self)
   }
 
+  /// Yields edge.face, then edge.pair.face
+  /// Gives you the "left" face to the half edge, and then the "right" face
+  /// Note that the "right" face is not connected to this edge, but to its pair
   pub fn adjacent_faces<'a>(&'a self) -> EdgeAdjacentFaceIterator<'a> {
     EdgeAdjacentFaceIterator::new(self)
   }

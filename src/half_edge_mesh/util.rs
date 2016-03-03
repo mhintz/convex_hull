@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use half_edge_mesh::components::{Edge, /*Vert,*/ Face};
+use half_edge_mesh::edge::Edge;
+use half_edge_mesh::face::Face;
 use half_edge_mesh::ptr::{Ptr, EdgeRc, VertRc, FaceRc};
 use half_edge_mesh::half_edge_mesh::HalfEdgeMesh;
 

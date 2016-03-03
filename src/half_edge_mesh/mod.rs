@@ -1,13 +1,15 @@
 pub mod ptr;
-pub mod components;
+pub mod edge;
+pub mod vert;
+pub mod face;
 pub mod iterators;
 pub mod half_edge_mesh;
 pub mod util;
 
 pub use self::half_edge_mesh::HalfEdgeMesh;
-pub use self::components::Edge;
-pub use self::components::Vert;
-pub use self::components::Face;
+pub use self::edge::Edge;
+pub use self::vert::Vert;
+pub use self::face::Face;
 
 // Export the pointer types too, in case you need them
 pub use self::ptr::*;

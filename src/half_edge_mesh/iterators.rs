@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use half_edge_mesh::components::{Edge, /*Vert, Face*/};
+use half_edge_mesh::edge::Edge;
 use half_edge_mesh::ptr::{
   Ptr,
   EdgePtr, EdgeRc,

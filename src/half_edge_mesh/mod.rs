@@ -2,6 +2,7 @@ pub mod ptr;
 pub mod components;
 pub mod iterators;
 pub mod half_edge_mesh;
+pub mod util;
 
 pub use self::half_edge_mesh::HalfEdgeMesh;
 pub use self::components::Edge;

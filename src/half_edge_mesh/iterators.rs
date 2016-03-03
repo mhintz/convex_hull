@@ -10,6 +10,8 @@ use half_edge_mesh::ptr::{
 };
 
 // ToPtrVec
+// TODO: rename this, since it's not exactly a vec of "Ptr",
+// and that's potentially confusing
 
 // A trait for converting an interator of Ptr<T>
 // into a vector of Rc<RefCell<T>>

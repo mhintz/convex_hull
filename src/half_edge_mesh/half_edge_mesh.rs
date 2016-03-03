@@ -73,8 +73,52 @@ impl HalfEdgeMesh {
     return mesh;
   }
 
-  pub fn from_face_vertex_mesh(vertices: & Vec<Pt>, indices: & Vec<Tri>) {
-    unimplemented!();
+  pub fn from_face_vertex_mesh(vertices: & Vec<Pt>, indices: & Vec<Tri>) -> HalfEdgeMesh {
+    let mut mesh = HalfEdgeMesh::empty();
+    let mut id_map: HashMap<usize, u32> = HashMap::new(); // Maps indices to ids
+
+    for (idx, pos) in vertices.iter().enumerate() {
+      let vert = Ptr::new_rc(Vert::empty(pos.clone()));
+      id_map.insert(idx, vert.borrow().id);
+      mesh.push_vert(vert);
+    }
+
+    for tri in indices.iter() {
+      let mut face = Ptr::new_rc(Face::empty());
+      let mut new_edges: Vec<EdgeRc> = Vec::new();
+
+      for idx in tri {
+        match id_map.get(idx) {
+          Some(vert_id) => {
+            if let Some(ref vert) = mesh.vertices.get(vert_id) {
+              let mut edge = Ptr::new_rc(Edge::with_origin(Ptr::new(vert)));
+              edge.borrow_mut().set_face_rc(& face);
+              vert.borrow_mut().set_edge_rc(& edge);
+              new_edges.push(edge);
+            }
+          },
+          None => (),
+        }
+      }
+
+      let n_edge_len = new_edges.len();
+      for (idx, edge) in new_edges.iter().enumerate() {
+        edge.borrow_mut().set_next_rc(& new_edges[(idx + 1) % n_edge_len]);
+      }
+
+      if let Some(ref edge) = new_edges.get(0) {
+        face.borrow_mut().set_edge_rc(edge);
+      }
+
+      for edge in new_edges {
+        mesh.push_edge(edge);
+      }
+      mesh.push_face(face);
+    }
+
+    report_connect_err(connect_pairs(&mut mesh));
+
+    return mesh;
   }
 
   pub fn push_edge(&mut self, edge: EdgeRc) {

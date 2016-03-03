@@ -302,13 +302,47 @@ impl HalfEdgeMesh {
   // Therefore, it has three adjacent faces.
   // The vertices connected to those edges form a new face, and the faces and edges connected
   // to the removed vertex are also removed
-  pub fn remove_point(&mut self, point: & VertRc) {
-    unimplemented!();
+  pub fn remove_vert(&mut self, vert: & VertRc) {
+    let vert_b = vert.borrow();
+    let mut edges = vert_b.adjacent_edges().to_ptr_vec(); // get e for e in v.edges
+    // Edges are iterated in clockwise order, but we need counter-clockwise order
+    // to establish correct .next links
+    edges.reverse();
+
+    // Must have 3 edges, so that the surrounding faces can be combined to a triangle
+    if edges.len() != 3 { return; }
+
+    let new_face = Ptr::new_rc(Face::empty()); // n_f
+
+    for (idx, edge) in edges.iter().enumerate() {
+      let edge_b = edge.borrow();
+      edge_b.next.upgrade()
+        .map(|next: EdgeRc| {
+          let mut next_bm = next.borrow_mut();
+          next_bm.set_face_rc(& new_face); // e.n.f = n_f
+          next_bm.set_next(& edges[(idx + 1) % edges.len()].borrow().next); // e.n.n = (e + 1).n
+          new_face.borrow_mut().set_edge_rc(& next); // n_f.e = e.n
+          next_bm.origin.upgrade()
+            .map(|o: VertRc| o.borrow_mut().set_edge_rc(& next)); // e.n.o.e = e.n
+        });
+
+      edge_b.pair.upgrade()
+        .map(|p: EdgeRc| self.edges.remove(& p.borrow().id)); // del e.p
+      self.edges.remove(& edge_b.id); // del e
+    }
+
+    self.push_face(new_face); // add n_f
+
+    for face in vert_b.adjacent_faces() {
+      face.upgrade().map(|f: FaceRc| self.faces.remove(& f.borrow().id)); // del f for f in v.faces
+    }
+
+    self.vertices.remove(& vert_b.id); // del v
   }
 
-  pub fn remove_point_ptr(&mut self, point: & VertPtr) {
+  pub fn remove_vert_ptr(&mut self, point: & VertPtr) {
     match point.upgrade() {
-      Some(point_rc) => self.remove_point(& point_rc),
+      Some(point_rc) => self.remove_vert(& point_rc),
       None => (),
     }
   }

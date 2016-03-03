@@ -84,14 +84,14 @@ impl HalfEdgeMesh {
     }
 
     for tri in indices.iter() {
-      let mut face = Ptr::new_rc(Face::empty());
+      let face = Ptr::new_rc(Face::empty());
       let mut new_edges: Vec<EdgeRc> = Vec::new();
 
       for idx in tri {
         match id_map.get(idx) {
           Some(vert_id) => {
             if let Some(ref vert) = mesh.vertices.get(vert_id) {
-              let mut edge = Ptr::new_rc(Edge::with_origin(Ptr::new(vert)));
+              let edge = Ptr::new_rc(Edge::with_origin(Ptr::new(vert)));
               edge.borrow_mut().set_face_rc(& face);
               vert.borrow_mut().set_edge_rc(& edge);
               new_edges.push(edge);

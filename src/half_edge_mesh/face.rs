@@ -12,6 +12,7 @@ static mut face_id: u32 = 0;
 
 fn get_face_id() -> u32 { unsafe { face_id += 1; face_id } }
 
+// TODO: Better way of figuring out when to run compute_attrs
 pub struct Face {
   pub edge: EdgePtr,
   pub normal: Vec3,

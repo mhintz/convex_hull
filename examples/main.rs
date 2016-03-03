@@ -41,11 +41,12 @@ fn main() {
   oct_he_mesh.triangulate_face(Pt::new(1.0, 1.0, 1.0), alt_face_1);
   let alt_face_2 = & oct_he_mesh.faces[& 1].clone();
   oct_he_mesh.triangulate_face(Pt::new(-1.0, 1.0, 1.0), alt_face_2);
+
   let oct_he_mesh_buffer = BufferSet::from_half_edge_mesh_flat_faces(& window, & oct_he_mesh);
 
-  let tet_pts = get_tetrahedron_points();
-  let tet_he_mesh = HalfEdgeMesh::from_tetrahedron_pts(tet_pts[0], tet_pts[1], tet_pts[2], tet_pts[3]);
-  let tet_he_mesh_buffer = BufferSet::from_half_edge_mesh_flat_faces(& window, & tet_he_mesh);
+  // let tet_pts = get_tetrahedron_points();
+  // let tet_he_mesh = HalfEdgeMesh::from_tetrahedron_pts(tet_pts[0], tet_pts[1], tet_pts[2], tet_pts[3]);
+  // let tet_he_mesh_buffer = BufferSet::from_half_edge_mesh_flat_faces(& window, & tet_he_mesh);
 
   // Vertex Shader
   let mut vert_shader_file = File::open("examples/shader/base.vs").unwrap();
@@ -104,7 +105,7 @@ fn main() {
       u_normal_cam: mat4_uniform(& normal_cam)
     };
 
-    target.draw(& tet_he_mesh_buffer.vertices, & tet_he_mesh_buffer.indices, & basic_program, & basic_uniforms, & draw_params).unwrap();
+    // target.draw(& tet_he_mesh_buffer.vertices, & tet_he_mesh_buffer.indices, & basic_program, & basic_uniforms, & draw_params).unwrap();
 
     target.draw(& oct_he_mesh_buffer.vertices, & oct_he_mesh_buffer.indices, & basic_program, & basic_uniforms, & draw_params).unwrap();
 

@@ -13,6 +13,7 @@ static mut face_id: u32 = 0;
 fn get_face_id() -> u32 { unsafe { face_id += 1; face_id } }
 
 // TODO: Better way of figuring out when to run compute_attrs
+#[derive(Debug)]
 pub struct Face {
   pub edge: EdgePtr,
   pub normal: Vec3,
@@ -105,11 +106,5 @@ impl std::hash::Hash for Face {
   fn hash<H>(& self, state: &mut H) where H: std::hash::Hasher {
     state.write_u32(self.id);
     state.finish();
-  }
-}
-
-impl std::fmt::Debug for Face {
-  fn fmt(& self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-    write!(fmt, "Face {{ id: {} }}", self.id)
   }
 }

@@ -9,6 +9,7 @@ static mut vert_id: u32 = 0;
 
 fn get_vert_id() -> u32 { unsafe { vert_id += 1; vert_id } }
 
+#[derive(Debug)]
 pub struct Vert {
   pub edge: EdgePtr,
   pub pos: Pt,
@@ -73,11 +74,5 @@ impl std::hash::Hash for Vert {
   fn hash<H>(& self, state: &mut H) where H: std::hash::Hasher {
     state.write_u32(self.id);
     state.finish();
-  }
-}
-
-impl std::fmt::Debug for Vert {
-  fn fmt(& self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-    write!(fmt, "Vert {{ id: {} }}", self.id)
   }
 }

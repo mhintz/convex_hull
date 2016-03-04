@@ -10,6 +10,7 @@ static mut edge_id: u32 = 0;
 
 fn get_edge_id() -> u32 { unsafe { edge_id += 1; edge_id } }
 
+#[derive(Debug)]
 pub struct Edge {
   pub next: EdgePtr,
   pub pair: EdgePtr,
@@ -98,11 +99,5 @@ impl std::hash::Hash for Edge {
   fn hash<H>(& self, state: &mut H) where H: std::hash::Hasher {
     state.write_u32(self.id);
     state.finish();
-  }
-}
-
-impl std::fmt::Debug for Edge {
-  fn fmt(& self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-    write!(fmt, "Edge {{ id: {} }}", self.id)
   }
 }

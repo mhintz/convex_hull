@@ -69,6 +69,22 @@ impl Edge {
   // The tests in this function are in order of "subjective likeliness of being invalid"
   pub fn is_valid(& self) -> bool { self.pair.is_valid() && self.face.is_valid() && self.origin.is_valid() && self.next.is_valid() }
 
+  pub fn get_next(& self) -> Option<EdgeRc> { self.next.upgrade() }
+
+  pub fn get_pair(& self) -> Option<EdgeRc> { self.pair.upgrade() }
+
+  pub fn get_origin(& self) -> Option<VertRc> { self.origin.upgrade() }
+
+  pub fn get_face(& self) -> Option<FaceRc> { self.face.upgrade() }
+
+  pub fn get_next_next(& self) -> Option<EdgeRc> { self.get_next().and_then(|n| n.borrow().get_next()) }
+
+  pub fn get_next_pair(& self) -> Option<EdgeRc> { self.get_next().and_then(|n| n.borrow().get_pair()) }
+
+  pub fn get_target(& self) -> Option<VertRc> { self.get_next().and_then(|n| n.borrow().get_origin()) }
+
+  pub fn get_pair_face(& self) -> Option<FaceRc> { self.get_pair().and_then(|p| p.borrow().get_face()) }
+
   /// Yields edge.origin, then edge.next.origin
   /// Gives you first the source of the half-edge, and then its target
   pub fn adjacent_verts<'a> (&'a self) -> EdgeAdjacentVertIterator<'a> {

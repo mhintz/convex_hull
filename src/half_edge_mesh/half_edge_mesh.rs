@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 use defs::*;
 
@@ -12,6 +13,8 @@ use half_edge_mesh::util::*;
 /// Half-Edge Mesh data structure
 /// While it's possible to create non-triangular faces, this code assumes
 /// triangular faces in several locations
+// TODO: Better error reporting, using a custom error type
+// See also: http://blog.burntsushi.net/rust-error-handling/
 pub struct HalfEdgeMesh {
   pub edges: HashMap<u32, EdgeRc>,
   pub vertices: HashMap<u32, VertRc>,
@@ -286,16 +289,185 @@ impl HalfEdgeMesh {
     }
   }
 
-  // Attach a point to a mesh, replacing many faces (used for the convex hull algorithm)
-  // The faces should be a continuously connected group, each adjacent pair of vertices
-  // in the border of this group are connected to the point in a new triangular face.
-  pub fn attach_point_for_faces(&mut self, point: Pt, faces: & Vec<FaceRc>) {
-    unimplemented!();
+  /// Attach a point to a mesh, replacing many faces (used for the convex hull algorithm)
+  /// The faces should be a continuously connected group, each adjacent pair of vertices
+  /// in the border of this group are connected to the point in a new triangular face.
+  /// The programmer is responsible for ensuring that there are no holes in the passed
+  /// set of faces.
+  pub fn attach_point_for_faces(&mut self, point: Pt, remove_faces: & Vec<FaceRc>) -> Result<(), &'static str> {
+    // collect a set of face ids to be removed, for later reference
+    let outgoing_face_ids: HashSet<u32> = remove_faces.iter().map(|f| f.borrow().id).collect();
+    let mut horizon_edges: HashMap<u32, EdgeRc> = HashMap::new();
+    let mut remove_edges: Vec<u32> = Vec::new();
+    let mut remove_verts: Vec<u32> = Vec::new();
+    let mut horizon_next_map: HashMap<u32, u32> = HashMap::new();
+    let mut iter_edge: Option<EdgeRc> = None;
+
+    // for each face in faces
+    for out_face in remove_faces.iter() {
+      // iterate over the edges of the face
+      for face_edge in out_face.borrow().adjacent_edges().to_ptr_vec() {
+        // check if the opposite face bordered by the edge should also be removed (edge.pair.face)
+        // any edges which border a face to be removed, should also be removed.
+        // Any edges which border a face which won't be removed, are part of the "horizon".
+        let remove_edge = face_edge.borrow().pair.upgrade()
+          .and_then(|p| p.borrow().face.upgrade())
+          .map(|f| outgoing_face_ids.contains(& f.borrow().id))
+          .unwrap_or(true); // Remove edges where pointer upgrades don't work
+
+        if remove_edge {
+          // Removed edges are saved for later in a vec
+          remove_edges.push(face_edge.borrow().id);
+        } else {
+          // The origin vertex of each horizon edge should have it's edge pointer set to the horizon edge
+          // This is important in case the edge pointer was already set to one of the removed edges
+          face_edge.borrow().get_origin().map(|o| o.borrow_mut().set_edge_rc(& face_edge));
+          // The first horizon edge discovered should be saved as an "iteration" edge
+          if iter_edge.is_none() { iter_edge = Some(face_edge.clone()); }
+          // Horizon edges are saved for later in a HashMap (id -> edge)
+          horizon_edges.insert(face_edge.borrow().id, face_edge.clone());
+        }
+      }
+
+      // likewise, iterate over the vertices of the face
+      // any vertex which is surrounded by only faces to be removed, should also be removed.
+      // any vertex which has at least one non-removed face adjacent to it should not be removed.
+      // Save the removed vertices in a list, to be dealt with later
+      for face_vert in out_face.borrow().adjacent_verts().to_ptr_vec() {
+        let remove_vert = face_vert.borrow().adjacent_faces()
+          .all(|face_ptr| {
+            face_ptr.upgrade()
+              .map(|f| outgoing_face_ids.contains(& f.borrow().id))
+              .unwrap_or(true)
+          });
+
+        if remove_vert {
+          remove_verts.push(face_vert.borrow().id);
+        }
+      }
+    }
+
+    // If no iteration edge was saved, then no horizon edges were found and the faces list is invalid.
+    if iter_edge.is_none() { return Err("No horizon edges found"); }
+
+    // iterate over the horizon edges
+    for h_edge in horizon_edges.values() {
+      // Iterate over the edges at the target end of each horizon edge (edge.next.origin.adjacent_edges())
+      if let Some(target_vert) = h_edge.borrow().get_target() {
+        // find the next horizon edge connected to it.
+        // If the edge is actually a horizon edge (i.e. it is actually adjacent to a face which won't be removed),
+        // then this adjacent horizon edge must exist.
+        for adj_edge in target_vert.borrow().adjacent_edges() {
+          if let Some(adj_edge_rc) = adj_edge.upgrade() {
+            let adj_id = adj_edge_rc.borrow().id;
+            if horizon_edges.contains_key(& adj_id) {
+              // Save the correspondences between each horizon edge and the next one
+              horizon_next_map.insert(h_edge.borrow().id, adj_id);
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // check the horizon edge next correspondences: each next value should itself have a next value.
+    // In addition, each key value should have some other key's next pointing to it.
+    // Because of the way the hashmap is constructed, no edge will point to itself (good!)
+    let horizon_next_keys: HashSet<u32> = horizon_next_map.keys().map(|e| e.clone()).collect();
+    let horizon_next_values: HashSet<u32> = horizon_next_map.values().map(|e| e.clone()).collect();
+
+    // Test that the set of keys and values are equal, i.e. keys are a subset of values and vice versa
+    if horizon_next_keys != horizon_next_values { return Err("Horizon is malformed - it does not form a connected loop"); }
+
+    // Create a vec which iterates over the horizon edges, with adjacent horizon edges adjacent in the vec.
+    // This will be used twice later
+    let start_edge = iter_edge.unwrap();
+    let start_id = start_edge.borrow().id;
+    let mut iter_id = start_id;
+    let mut horizon_vec: Vec<EdgeRc> = Vec::new();
+    // Note: after testing the invariant above that keys and values are equal,
+    // we know this loop will finish
+    loop {
+      horizon_vec.push(self.edges[& iter_id].clone());
+      iter_id = horizon_next_map[& iter_id];
+      if iter_id == start_id { break; }
+    }
+
+    // Remove the faces, the edges, and the vertices that were marked for removal
+    // Do this after all other data structures have been set up, because a valid mesh is required
+    // for some steps, for example finding a horizon edge's next edge
+    for out_face in remove_faces.iter() {
+      self.faces.remove(& out_face.borrow().id);
+    }
+
+    for out_vert_id in remove_verts.iter() {
+      self.vertices.remove(out_vert_id);
+    }
+
+    for out_edge_id in remove_edges.iter() {
+      self.edges.remove(out_edge_id);
+    }
+
+    // create a new vertex for the point
+    let apex_vert = Ptr::new_rc(Vert::empty(point));
+
+    // Going to iterate twice through the ordered list of horizon edges created earlier
+    // And set up new mesh entities and their linkage
+    let horizon_len = horizon_vec.len();
+
+    // the iterating edge is the 'base edge'
+    for (idx, base_edge) in horizon_vec.iter().enumerate() {
+      // the iterating edge's next edge is edges[(i + 1) % edges.len()]
+      let next_edge = & horizon_vec[(idx + 1) % horizon_len];
+      if let Some(next_origin) = next_edge.borrow().origin.upgrade() {
+        // create a new face, connected to the base edge
+        let new_face = Ptr::new_rc(Face::with_edge(Ptr::new(base_edge)));
+        // create two new edges, one leading and one trailing.
+        // The leading edge connects to the next horizon edge's origin vertex
+        let new_leading = Ptr::new_rc(Edge::with_origin(Ptr::new(& next_origin)));
+        // the trailing edge connects to the new vertex
+        let new_trailing = Ptr::new_rc(Edge::with_origin(Ptr::new(& apex_vert)));
+        // connect the new vertex to the trailing edge (this is repeated many times but is necessary for mesh validity)
+        apex_vert.borrow_mut().set_edge_rc(& new_trailing);
+        // connect next ptrs: the horizon edge to the leading edge, the leading to the trailing, and the trailing to the horizon
+        base_edge.borrow_mut().set_next_rc(& new_leading);
+        new_leading.borrow_mut().set_next_rc(& new_trailing);
+        new_trailing.borrow_mut().set_next_rc(& base_edge);
+        // connect all three to the face
+        base_edge.borrow_mut().set_face_rc(& new_face);
+        new_leading.borrow_mut().set_face_rc(& new_face);
+        new_trailing.borrow_mut().set_face_rc(& new_face);
+        // move the two new edges into the mesh
+        self.push_edge(new_leading);
+        self.push_edge(new_trailing);
+        // move the face into the mesh
+        self.push_face(new_face);
+      } else {
+        return Err("Could not set up horizon faces correctly");
+      }
+    }
+
+    // move the point vertex into the mesh
+    self.push_vert(apex_vert);
+
+    // iterate over the horizon edges again.
+    for (idx, base_edge) in horizon_vec.iter().enumerate() {
+      // Connect pairs: edge.next to (edge + 1).next.next and vice versa
+      let next_edge = & horizon_vec[(idx + 1) % horizon_len];
+      if let (Some(next_rc), Some(pair_rc)) = (base_edge.borrow().get_next(), next_edge.borrow().get_next_next()) {
+        next_rc.borrow_mut().set_pair_rc(& pair_rc);
+        pair_rc.borrow_mut().set_pair_rc(& next_rc);
+      } else {
+        return Err("Could not connect pair edges");
+      }
+    }
+
+    return Ok(());
   }
 
-  pub fn attach_point_for_face_ptrs(&mut self, point: Pt, faces: & Vec<FacePtr>) {
+  pub fn attach_point_for_face_ptrs(&mut self, point: Pt, faces: & Vec<FacePtr>) -> Result<(), &'static str> {
     let face_ptrs = faces.iter().filter_map(|f| f.upgrade()).collect::<Vec<FaceRc>>();
-    self.attach_point_for_faces(point, & face_ptrs);
+    self.attach_point_for_faces(point, & face_ptrs)
   }
 
   // This function should only work if the vertex has exactly three adjacent edges.

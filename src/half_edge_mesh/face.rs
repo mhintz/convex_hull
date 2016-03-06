@@ -51,6 +51,8 @@ impl Face {
 
   pub fn is_valid(& self) -> bool { self.edge.is_valid() }
 
+  pub fn get_edge(& self) -> Option<EdgeRc> { self.edge.upgrade() }
+
   pub fn num_vertices(& self) -> usize { self.adjacent_verts().count() }
 
   // Note: this only works when edges and verts are properly connected

@@ -48,6 +48,8 @@ impl Vert {
 
   pub fn is_valid(& self) -> bool { self.edge.is_valid() }
 
+  pub fn get_edge(& self) -> Option<EdgeRc> { self.edge.upgrade() }
+
   /// Important: Iterates over the vertices connected to a vertex in *clockwise* order
   pub fn adjacent_verts(& self) -> VertAdjacentVertIterator {
     VertAdjacentVertIterator::new(self.edge.clone())

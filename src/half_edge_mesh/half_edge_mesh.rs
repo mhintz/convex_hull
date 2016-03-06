@@ -474,7 +474,7 @@ impl HalfEdgeMesh {
   // Therefore, it has three adjacent faces.
   // The vertices connected to those edges form a new face, and the faces and edges connected
   // to the removed vertex are also removed
-  pub fn remove_vert(&mut self, vert: & VertRc) {
+  pub fn remove_vert(&mut self, vert: & VertRc) -> Result<(), &'static str> {
     let vert_b = vert.borrow();
     let mut edges = vert_b.adjacent_edges().to_ptr_vec(); // get e for e in v.edges
     // Edges are iterated in clockwise order, but we need counter-clockwise order
@@ -482,7 +482,7 @@ impl HalfEdgeMesh {
     edges.reverse();
 
     // Must have 3 edges, so that the surrounding faces can be combined to a triangle
-    if edges.len() != 3 { return; }
+    if edges.len() != 3 { return Err("Vertex must have exactly 3 connecting edges"); }
 
     let new_face = Ptr::new_rc(Face::empty()); // n_f
 
@@ -510,12 +510,14 @@ impl HalfEdgeMesh {
     }
 
     self.vertices.remove(& vert_b.id); // del v
+
+    return Ok(());
   }
 
-  pub fn remove_vert_ptr(&mut self, point: & VertPtr) {
+  pub fn remove_vert_ptr(&mut self, point: & VertPtr) -> Result<(), &'static str> {
     match point.upgrade() {
       Some(point_rc) => self.remove_vert(& point_rc),
-      None => (),
+      None => Err("Provided pointer was invalid"),
     }
   }
 

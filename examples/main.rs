@@ -89,7 +89,7 @@ fn main() {
     target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0);
 
     model_rotation += per_frame_rotation;
-    let rotation_quat = Quat::from_axis_angle(Vector3::new(1.0, 0.0, 0.0).normalize(), Rad::new(model_rotation));
+    let rotation_quat = Quat::from_axis_angle(Vector3::new(1.0, 1.0, 0.0).normalize(), Rad::new(model_rotation));
 
     let model_matrix = model_position * Mat4::from(rotation_quat);
 

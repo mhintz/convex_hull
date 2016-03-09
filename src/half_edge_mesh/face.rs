@@ -96,6 +96,14 @@ impl Face {
   pub fn adjacent_faces(& self) -> FaceAdjacentFaceIterator {
     FaceAdjacentFaceIterator::new(self.edge.clone())
   }
+
+  pub fn can_see(& self, point: & Pt) -> bool {
+    unimplemented!();
+  }
+
+  pub fn distance_to(& self, point: & Pt) -> f64 {
+    unimplemented!();
+  }
 }
 
 impl PartialEq<Face> for Face {

@@ -15,6 +15,8 @@ use half_edge_mesh::util::*;
 /// triangular faces in several locations
 // TODO: Better error reporting, using a custom error type
 // See also: http://blog.burntsushi.net/rust-error-handling/
+// TODO: Better way of updating face-specific data like center and normals
+// Probably should do it whenever faces are added or a vertex is modified ?
 pub struct HalfEdgeMesh {
   pub edges: HashMap<u32, EdgeRc>,
   pub vertices: HashMap<u32, VertRc>,
@@ -215,6 +217,10 @@ impl HalfEdgeMesh {
     }
   }
 
+  pub fn contains(& self, point: & Pt) -> bool {
+    unimplemented!();
+  }
+
   // Replace a face with three faces, each connected to the new point
   // And one of the face's previous vertices
   // TODO: Make all of these mesh-manipulation functions return a Result<(), &str> to check that manipulation was completed
@@ -293,8 +299,8 @@ impl HalfEdgeMesh {
   /// The faces should be a continuously connected group, each adjacent pair of vertices
   /// in the border of this group are connected to the point in a new triangular face.
   /// The programmer is responsible for ensuring that there are no holes in the passed
-  /// set of faces.
-  pub fn attach_point_for_faces(&mut self, point: Pt, remove_faces: & Vec<FaceRc>) -> Result<(), &'static str> {
+  /// set of faces. Returns Pointers to the new faces in the result, if successful
+  pub fn attach_point_for_faces(&mut self, point: Pt, remove_faces: & Vec<FaceRc>) -> Result<Vec<FaceRc>, &'static str> {
     // collect a set of face ids to be removed, for later reference
     let outgoing_face_ids: HashSet<u32> = remove_faces.iter().map(|f| f.borrow().id).collect();
     let mut horizon_edges: HashMap<u32, EdgeRc> = HashMap::new();
@@ -415,6 +421,8 @@ impl HalfEdgeMesh {
     // And set up new mesh entities and their linkage
     let horizon_len = horizon_vec.len();
 
+    let return_faces: Vec<FaceRc> = Vec::new();
+
     // the iterating edge is the 'base edge'
     for (idx, base_edge) in horizon_vec.iter().enumerate() {
       // the iterating edge's next edge is edges[(i + 1) % edges.len()]
@@ -441,6 +449,7 @@ impl HalfEdgeMesh {
         self.push_edge(new_leading);
         self.push_edge(new_trailing);
         // move the face into the mesh
+        return_faces.push(new_face.clone());
         self.push_face(new_face);
       } else {
         return Err("Could not set up horizon faces correctly");
@@ -462,10 +471,10 @@ impl HalfEdgeMesh {
       }
     }
 
-    return Ok(());
+    return Ok(return_faces);
   }
 
-  pub fn attach_point_for_face_ptrs(&mut self, point: Pt, faces: & Vec<FacePtr>) -> Result<(), &'static str> {
+  pub fn attach_point_for_face_ptrs(&mut self, point: Pt, faces: & Vec<FacePtr>) -> Result<Vec<FaceRc>, &'static str> {
     let face_ptrs = faces.iter().filter_map(|f| f.upgrade()).collect::<Vec<FaceRc>>();
     self.attach_point_for_faces(point, & face_ptrs)
   }

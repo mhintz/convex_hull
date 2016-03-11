@@ -69,27 +69,37 @@ pub fn get_convex_hull(mut points_list: Vec<Pt>) -> HalfEdgeMesh {
     // Check to make sure it's still in the mesh (many faces will be removed)
     if !hull_mesh.faces.contains_key(& test_face.borrow().id) { continue; }
     // For all the points in the list, find the one that is both visible to and farthest from the face
-    let max_point = points_list.iter()
-      .filter(|pt| test_face.borrow().can_see(pt))
-      .enumerate()
-      .max_by_key(|& (i, pt)| test_face.borrow().distance_to(pt));
 
-    if max_point.is_none() { continue; }
-    let (max_pt_idx, max_pt) = max_point.unwrap();
+    let (point_maxima, _) = points_list.iter()
+        .filter(|pt| test_face.borrow().can_see(pt))
+        .enumerate()
+        .fold((None, 0.0), |(mut point_maxima, mut max_dist), (idx, pt)| {
+          let dist = test_face.borrow().distance_to(pt);
+          if dist > max_dist {
+            point_maxima = Some((idx, pt.clone()));
+            max_dist = dist;
+          }
+          (point_maxima, max_dist)
+        });
+
+    if point_maxima.is_none() { continue; }
+    let (max_pt_index, max_point) = point_maxima.unwrap();
+
     // Remove the point from the list of searchable points.
     // It will be added to the hull and will always be strictly within the hull from here on
-    points_list.remove(max_pt_idx);
+    points_list.remove(max_pt_index);
+
     // For all the faces in the mesh, check whether they are visible from the point
     // i.e. check whether the point is in the direction of the face normal,
     // and sufficiently far away that it should count
     // For each face where this is the case, add it to a list.
-    let light_faces: Vec<FaceRc> = hull_mesh.faces.values().filter(|f| f.borrow().can_see(max_pt)).cloned().collect();
+    let light_faces: Vec<FaceRc> = hull_mesh.faces.values().filter(|f| f.borrow().can_see(& max_point)).cloned().collect();
     // These faces should all be adjacent.
     // Find their outline on the mesh. This is the "horizon"
     // Then, replace all such faces with new faces which connect
     // To the farthest point.
     // Add the new faces to the end of the queue
-    match hull_mesh.attach_point_for_faces(max_pt.clone(), & light_faces) {
+    match hull_mesh.attach_point_for_faces(max_point.clone(), & light_faces) {
       Ok(new_faces) => face_queue.extend(new_faces),
       Err(message) => println!("Error occurred while building convex hull, {}", message),
     }

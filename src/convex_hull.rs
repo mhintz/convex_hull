@@ -74,7 +74,7 @@ pub fn get_convex_hull(mut points_list: Vec<Pt>) -> HalfEdgeMesh {
         .filter(|pt| test_face.borrow().can_see(pt))
         .enumerate()
         .fold((None, 0.0), |(mut point_maxima, mut max_dist), (idx, pt)| {
-          let dist = test_face.borrow().distance_to(pt);
+          let dist = test_face.borrow().directed_distance_to(pt);
           if dist > max_dist {
             point_maxima = Some((idx, pt.clone()));
             max_dist = dist;

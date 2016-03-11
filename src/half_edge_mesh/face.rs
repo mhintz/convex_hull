@@ -1,7 +1,8 @@
 use std;
 
-use cgmath::Point; // Needed for Pt::origin()
+use cgmath::Point;
 use cgmath::EuclideanVector;
+use cgmath::Vector;
 
 use defs::*;
 
@@ -97,12 +98,16 @@ impl Face {
     FaceAdjacentFaceIterator::new(self.edge.clone())
   }
 
-  pub fn can_see(& self, point: & Pt) -> bool {
-    unimplemented!();
+  pub fn distance_to(& self, point: & Pt) -> f32 {
+    (point - self.center).length()
   }
 
-  pub fn distance_to(& self, point: & Pt) -> f64 {
-    unimplemented!();
+  pub fn directed_distance_to(& self, point: & Pt) -> f32 {
+    (point - self.center).dot(self.normal)
+  }
+
+  pub fn can_see(& self, point: & Pt) -> bool {
+    self.directed_distance_to(point) > 0.0000001 // Small epsilon to handle floating-point errors
   }
 }
 

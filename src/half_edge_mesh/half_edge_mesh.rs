@@ -421,7 +421,7 @@ impl HalfEdgeMesh {
     // And set up new mesh entities and their linkage
     let horizon_len = horizon_vec.len();
 
-    let return_faces: Vec<FaceRc> = Vec::new();
+    let mut return_faces: Vec<FaceRc> = Vec::new();
 
     // the iterating edge is the 'base edge'
     for (idx, base_edge) in horizon_vec.iter().enumerate() {

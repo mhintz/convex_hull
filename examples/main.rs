@@ -2,6 +2,8 @@
 extern crate glium;
 extern crate cgmath;
 extern crate convex_hull;
+extern crate rand;
+extern crate time;
 
 use std::io::prelude::*;
 use std::fs::File;
@@ -9,7 +11,9 @@ use std::fs::File;
 use glium::glutin;
 use glium::{DisplayBuild, Surface};
 
-use cgmath::{Vector3, EuclideanVector, Rotation3, Rad, Angle, Matrix, SquareMatrix};
+use cgmath::{Vector3, EuclideanVector, Point, Rotation3, Rad, Angle, Matrix, SquareMatrix};
+
+use rand::distributions::Sample;
 
 use convex_hull::defs::*;
 use convex_hull::mesh::*;
@@ -23,6 +27,39 @@ const ASPECT_RATIO: f32 = (WINDOW_WIDTH as f32) / (WINDOW_HEIGHT as f32);
 const NEAR_PLANE_Z: f32 = 0.5;
 const FAR_PLANE_Z: f32 = 1000.0;
 
+fn rand_points_in_cube<R: rand::Rng>(num_gen: &mut R, num: usize, side: f32) -> Vec<Pt> {
+  let mut rand_range = rand::distributions::Range::new(-side * 0.5, side * 0.5);
+  let mut points = Vec::with_capacity(num);
+  for idx in 0..num {
+    points.insert(idx, Pt::new(rand_range.sample(num_gen), rand_range.sample(num_gen), rand_range.sample(num_gen)));
+  }
+  return points;
+}
+
+fn rand_points_in_sphere<R: rand::Rng>(num_gen: &mut R, num: usize, radius: f32) -> Vec<Pt> {
+  let mut vec_range = rand::distributions::Range::new(-1.0, 1.0);
+  let mut radius_range = rand::distributions::Range::new(0.0, radius);
+  let mut points = Vec::with_capacity(num);
+  for idx in 0..num {
+    let point_vec = Vec3::new(vec_range.sample(num_gen), vec_range.sample(num_gen), vec_range.sample(num_gen));
+    let radius = radius_range.sample(num_gen);
+    let rand_point = Pt::from_vec(point_vec.normalize() * radius);
+    points.insert(idx, rand_point);
+  }
+  return points;
+}
+
+fn rand_points_on_sphere<R: rand::Rng>(num_gen: &mut R, num: usize, radius: f32) -> Vec<Pt> {
+  let mut rand_range = rand::distributions::Range::new(-1.0, 1.0);
+  let mut points = Vec::with_capacity(num);
+  for idx in 0..num {
+    let point_vec = Vec3::new(rand_range.sample(num_gen), rand_range.sample(num_gen), rand_range.sample(num_gen));
+    let rand_point = Pt::from_vec(point_vec.normalize() * radius);
+    points.insert(idx, rand_point);
+  }
+  return points;
+}
+
 fn mat4_uniform(mat: & Mat4) -> [[f32; 4]; 4] {
   return mat.clone().into();
 }
@@ -34,13 +71,29 @@ fn main() {
     .with_title("Convex Hull".to_string())
     .build_glium().unwrap();
 
+  let mut rand_rng = rand::thread_rng();
+  // let random_points = rand_points_in_cube(&mut rand_rng, 10000, 1.0);
+  let random_points = rand_points_in_sphere(&mut rand_rng, 20, 1.0);
+  // let random_points = rand_points_on_sphere(&mut rand_rng, 10000, 1.0);
+
+  let start = time::get_time();
+  let hull_mesh = convex_hull::get_convex_hull(random_points);
+  let duration = time::get_time() - start;
+  println!("convex hull computation took: {} seconds", duration);
+
+  let hull_mesh_buffer = BufferSet::from_half_edge_mesh_flat_faces(& window, & hull_mesh);
+
   // Geometry Data
   let oct_pts = get_octahedron_points();
   let mut oct_he_mesh = HalfEdgeMesh::from_octahedron_pts(oct_pts[0], oct_pts[1], oct_pts[2], oct_pts[3], oct_pts[4], oct_pts[5]);
-  let alt_face_1 = & oct_he_mesh.faces[& 3].clone();
-  oct_he_mesh.triangulate_face(Pt::new(1.0, 1.0, 1.0), alt_face_1);
-  let alt_face_2 = & oct_he_mesh.faces[& 1].clone();
-  oct_he_mesh.triangulate_face(Pt::new(-1.0, 1.0, 1.0), alt_face_2);
+  if oct_he_mesh.faces.contains_key(& 3) {
+    let alt_face_1 = & oct_he_mesh.faces[& 3].clone();
+    oct_he_mesh.triangulate_face(Pt::new(1.0, 1.0, 1.0), alt_face_1);
+  }
+  if oct_he_mesh.faces.contains_key(& 3) {
+    let alt_face_2 = & oct_he_mesh.faces[& 1].clone();
+    oct_he_mesh.triangulate_face(Pt::new(-1.0, 1.0, 1.0), alt_face_2);
+  }
 
   let oct_he_mesh_buffer = BufferSet::from_half_edge_mesh_flat_faces(& window, & oct_he_mesh);
 
@@ -107,7 +160,9 @@ fn main() {
 
     // target.draw(& tet_he_mesh_buffer.vertices, & tet_he_mesh_buffer.indices, & basic_program, & basic_uniforms, & draw_params).unwrap();
 
-    target.draw(& oct_he_mesh_buffer.vertices, & oct_he_mesh_buffer.indices, & basic_program, & basic_uniforms, & draw_params).unwrap();
+    // target.draw(& oct_he_mesh_buffer.vertices, & oct_he_mesh_buffer.indices, & basic_program, & basic_uniforms, & draw_params).unwrap();
+
+    target.draw(& hull_mesh_buffer.vertices, & hull_mesh_buffer.indices, & basic_program, & basic_uniforms, & draw_params).unwrap();
 
     target.finish().unwrap();
 

@@ -118,6 +118,7 @@ impl HalfEdgeMesh {
       for edge in new_edges {
         mesh.push_edge(edge);
       }
+
       mesh.push_face(face);
     }
 
@@ -219,6 +220,7 @@ impl HalfEdgeMesh {
     }
   }
 
+  // Test if a point is inside or outside of the mesh
   pub fn contains(& self, point: & Pt) -> bool {
     unimplemented!();
   }

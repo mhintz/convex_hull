@@ -58,6 +58,7 @@ impl Face {
 
   // Note: this only works when edges and verts are properly connected
   // So wait for the right time during initialization to run this
+  // TODO: Decide what to do here with a degenerate face
   pub fn compute_attrs(&mut self) {
     let mut center = Pt::origin();
     let mut count: f32 = 0.0;

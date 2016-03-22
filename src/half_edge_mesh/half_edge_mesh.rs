@@ -165,6 +165,8 @@ impl HalfEdgeMesh {
   }
 
   pub fn push_face(&mut self, face: FaceRc) {
+    // Ensuring that the attributes are correct before the face gets added here is essential
+    face.borrow_mut().compute_attrs();
     let key = face.borrow().id;
     self.faces.insert(key, face);
   }

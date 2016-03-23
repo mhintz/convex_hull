@@ -220,11 +220,6 @@ impl HalfEdgeMesh {
     }
   }
 
-  // Test if a point is inside or outside of the mesh
-  pub fn contains(& self, point: & Pt) -> bool {
-    unimplemented!();
-  }
-
   // Replace a face with three faces, each connected to the new point
   // And one of the face's previous vertices
   // TODO: Make all of these mesh-manipulation functions return a Result<(), &str> to check that manipulation was completed

@@ -195,9 +195,14 @@ pub fn get_convex_hull(mut points_list: Vec<Pt>) -> HalfEdgeMesh {
     }
   }
 
-  // TODO: Filter the points list based on whether the point is inside the tetrahedron.
-  // This saves a lot of iteration steps
-  // points_list.retain(|p| !hull_mesh.contains(p));
+  // Filter the points list based on whether the point is inside the tetrahedron.
+  // This saves a lot of iteration steps. It removes any points from the points list
+  // Which cannot be seen by any face (i.e. they are behind all faces in the tetrahedron)
+  points_list.retain(|p| {
+    hull_mesh.faces.values().any(|f| {
+      f.borrow().can_see(& p)
+    })
+  });
 
   // Add all faces of the hull to a FIFO queue
   let mut face_queue: LinkedList<FaceRc> = hull_mesh.faces.values().cloned().collect();
@@ -209,24 +214,23 @@ pub fn get_convex_hull(mut points_list: Vec<Pt>) -> HalfEdgeMesh {
     if !hull_mesh.faces.contains_key(& test_face.borrow().id) { continue; }
     // For all the points in the list, find the one that is both visible to and farthest from the face
 
-    let (point_maxima, _) = points_list.iter()
+    let face_visible_points: Vec<Pt> = points_list.iter()
         .filter(|pt| test_face.borrow().can_see(pt))
-        .enumerate()
-        .fold((None, 0.0), |(mut point_maxima, mut max_dist), (idx, pt)| {
+        .cloned()
+        .collect();
+
+    let (point_maxima, _) = face_visible_points.iter()
+        .fold((None, 0.0), |(mut point_maxima, mut max_dist), pt| {
           let dist = test_face.borrow().directed_distance_to(pt);
           if dist > max_dist {
-            point_maxima = Some((idx, pt.clone()));
+            point_maxima = Some(pt.clone());
             max_dist = dist;
           }
           (point_maxima, max_dist)
         });
 
     if point_maxima.is_none() { continue; }
-    let (max_pt_index, max_point) = point_maxima.unwrap();
-
-    // Remove the point from the list of searchable points.
-    // It will be added to the hull and will always be strictly within the hull from here on
-    points_list.remove(max_pt_index);
+    let max_point = point_maxima.unwrap();
 
     // For all the faces in the mesh, check whether they are visible from the point
     // i.e. check whether the point is in the direction of the face normal,
@@ -240,10 +244,19 @@ pub fn get_convex_hull(mut points_list: Vec<Pt>) -> HalfEdgeMesh {
     // To the farthest point.
     // Add the new faces to the end of the queue
     match hull_mesh.attach_point_for_faces(max_point, & light_faces) {
-      Ok(new_faces) => face_queue.extend(new_faces),
-      Err(message) => println!("Error occurred while attaching a new point, {}", message),
+      Ok(new_faces) => {
+        // Filter out from points_list any point which is
+        // in face_visible_points and behind all of the new faces
+        // This might be a performance improvement, and it might not. I'm not sure
+        points_list.retain(|p| {
+          // If the point isn't visible to the current test face, don't worry about it here
+          face_visible_points.iter().all(|face_pt| * face_pt != * p) || new_faces.iter().any(|n_face| n_face.borrow().can_see(p))
+        });
+
+        face_queue.extend(new_faces);
+      },
+      Err(message) => { println!("Error occurred while attaching a new point, {}", message); },
     }
-    // TODO: filter out from points_list any point which is behind all of the new faces
   }
 
   // Once all faces have been iterated over, the convex hull should be complete

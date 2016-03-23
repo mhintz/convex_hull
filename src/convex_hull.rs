@@ -176,6 +176,8 @@ fn get_extreme_points(list: & Vec<Pt>) -> Vec<usize> {
 // and clones it. Either way, a clone is necessary, and this way the caller can just use a
 // throwaway vector.
 pub fn get_convex_hull(mut points_list: Vec<Pt>) -> HalfEdgeMesh {
+  // TODO: deduplicate the points list before computing the hull
+  // TODO: Sometimes this function hits an infinite loop. Figure out why?
   // Check that we have a valid list of points
   if points_list.len() < 4 { return HalfEdgeMesh::empty(); }
   // Get the tetrahedron of the points at maxX, maxY, maxZ, and minZ

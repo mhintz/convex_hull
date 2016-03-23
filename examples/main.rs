@@ -26,6 +26,7 @@ const ASPECT_RATIO: f32 = (WINDOW_WIDTH as f32) / (WINDOW_HEIGHT as f32);
 // const AR_SCALE: f32 = 1.3;
 const NEAR_PLANE_Z: f32 = 0.5;
 const FAR_PLANE_Z: f32 = 1000.0;
+const NUM_POINTS: usize = 500;
 
 fn rand_points_in_cube<R: rand::Rng>(num_gen: &mut R, num: usize, side: f32) -> Vec<Pt> {
   let mut rand_range = rand::distributions::Range::new(-side * 0.5, side * 0.5);
@@ -72,9 +73,9 @@ fn main() {
     .build_glium().unwrap();
 
   let mut rand_rng = rand::thread_rng();
-  // let random_points = rand_points_in_cube(&mut rand_rng, 10000, 1.0);
-  let random_points = rand_points_in_sphere(&mut rand_rng, 20, 1.0);
-  // let random_points = rand_points_on_sphere(&mut rand_rng, 10000, 1.0);
+  // let random_points = rand_points_in_cube(&mut rand_rng, NUM_POINTS, 1.0);
+  // let random_points = rand_points_in_sphere(&mut rand_rng, NUM_POINTS, 1.0);
+  let random_points = rand_points_on_sphere(&mut rand_rng, NUM_POINTS, 1.0);
 
   let start = time::get_time();
   let hull_mesh = convex_hull::get_convex_hull(random_points);

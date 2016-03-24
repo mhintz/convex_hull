@@ -12,14 +12,25 @@ pub type VertRc = Rc<RefCell<Vert>>;
 pub type FacePtr = Ptr<Face>;
 pub type FaceRc = Rc<RefCell<Face>>;
 
+// Ptr is essentially a wrapper around Option<Weak<RefCell<T>>>,
+// a.k.a. a nullable ref-counted pointer with interior mutability
+// This abstraction is used to get around Rust's
+// validity, borrowing, and ownership rules, especially when constructing or
+// extending the half-edge mesh.
+
 #[derive(Debug)]
 pub struct Ptr<T> {
   val: Option<Weak<RefCell<T>>>
 }
 
 impl<T> Ptr<T> {
+  // Taken by value, so it moves the value out.
+  // Use this for constructing brand new objects.
+  // Returns an Rc<RefCell<T>>, not a Ptr<T>,
+  // don't get em mixed up
   pub fn new_rc(val: T) -> Rc<RefCell<T>> { Rc::new(RefCell::new(val)) }
 
+  // Taken by reference to an existing object. Creates a Ptr
   pub fn new(val: & Rc<RefCell<T>>) -> Ptr<T> {
     Ptr { val: Some(Rc::downgrade(val)) }
   }

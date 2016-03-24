@@ -118,10 +118,6 @@ fn construct_tetrahedron_order(p0: Pair, p1: Pair, p2: Pair, p3: Pair) -> Vec<us
   }
 }
 
-// TODO: this algorithm for choosing the initial tetrahedron points needs to be rethought.
-// For one, it doesn't take into account the edge case where some of the max values are the same
-// Point. For another, it doesn't handle certain edge cases that arise with degenerate positioning
-// of the tetrahedron points. Rethink this algorithm for better robustness.
 fn get_extreme_points(list: & Vec<Pt>) -> Vec<usize> {
   debug_assert!(list.len() >= 4);
 

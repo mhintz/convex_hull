@@ -16,9 +16,7 @@ use cgmath::{Vector3, EuclideanVector, Point, Rotation3, Rad, Angle, Matrix, Squ
 use rand::distributions::Sample;
 
 use convex_hull::defs::*;
-use convex_hull::mesh::*;
 use convex_hull::bufferset::*;
-use convex_hull::half_edge_mesh::HalfEdgeMesh;
 
 const WINDOW_WIDTH: u32 = 800;
 const WINDOW_HEIGHT: u32 = 800;
@@ -34,6 +32,7 @@ fn rand_points_in_cube<R: rand::Rng>(num_gen: &mut R, num: usize, side: f32) -> 
   for idx in 0..num {
     points.insert(idx, Pt::new(rand_range.sample(num_gen), rand_range.sample(num_gen), rand_range.sample(num_gen)));
   }
+  deduplicate_points_list(&mut points);
   return points;
 }
 
@@ -47,6 +46,7 @@ fn rand_points_in_sphere<R: rand::Rng>(num_gen: &mut R, num: usize, radius: f32)
     let rand_point = Pt::from_vec(point_vec.normalize() * radius);
     points.insert(idx, rand_point);
   }
+  deduplicate_points_list(&mut points);
   return points;
 }
 
@@ -58,7 +58,35 @@ fn rand_points_on_sphere<R: rand::Rng>(num_gen: &mut R, num: usize, radius: f32)
     let rand_point = Pt::from_vec(point_vec.normalize() * radius);
     points.insert(idx, rand_point);
   }
+  deduplicate_points_list(&mut points);
   return points;
+}
+
+fn same_point(num: usize) -> Vec<Pt> {
+  let mut points = Vec::with_capacity(num);
+  for idx in 0..num {
+    points.insert(idx, Pt::new(1.0, 1.0, 1.0));
+  }
+  return points;
+}
+
+// sorts and deduplicates a list of input points
+fn deduplicate_points_list(list: &mut Vec<Pt>) {
+  use std::cmp::Ordering::{Less, Equal};
+
+  list.sort_by(|a, b| {
+    match a.x.partial_cmp(& b.x).unwrap_or(Less) {
+      Equal => {
+        match a.y.partial_cmp(& b.y).unwrap_or(Less) {
+          Equal => a.z.partial_cmp(& b.z).unwrap_or(Less),
+          y => y,
+        }
+      },
+      x => x,
+    }
+  });
+
+  list.dedup();
 }
 
 fn mat4_uniform(mat: & Mat4) -> [[f32; 4]; 4] {
@@ -72,10 +100,12 @@ fn main() {
     .with_title("Convex Hull".to_string())
     .build_glium().unwrap();
 
+  // Geometry Data
   let mut rand_rng = rand::thread_rng();
   // let random_points = rand_points_in_cube(&mut rand_rng, NUM_POINTS, 1.0);
-  // let random_points = rand_points_in_sphere(&mut rand_rng, NUM_POINTS, 1.0);
-  let random_points = rand_points_on_sphere(&mut rand_rng, NUM_POINTS, 1.0);
+  let random_points = rand_points_in_sphere(&mut rand_rng, NUM_POINTS, 1.0);
+  // let random_points = rand_points_on_sphere(&mut rand_rng, NUM_POINTS, 1.0);
+  // let random_points = same_point(NUM_POINTS);
 
   let start = time::get_time();
   let hull_mesh = convex_hull::get_convex_hull(random_points);
@@ -83,24 +113,6 @@ fn main() {
   println!("convex hull computation took: {} seconds", duration);
 
   let hull_mesh_buffer = BufferSet::from_half_edge_mesh_flat_faces(& window, & hull_mesh);
-
-  // Geometry Data
-  let oct_pts = get_octahedron_points();
-  let mut oct_he_mesh = HalfEdgeMesh::from_octahedron_pts(oct_pts[0], oct_pts[1], oct_pts[2], oct_pts[3], oct_pts[4], oct_pts[5]);
-  if oct_he_mesh.faces.contains_key(& 3) {
-    let alt_face_1 = & oct_he_mesh.faces[& 3].clone();
-    oct_he_mesh.triangulate_face(Pt::new(1.0, 1.0, 1.0), alt_face_1);
-  }
-  if oct_he_mesh.faces.contains_key(& 3) {
-    let alt_face_2 = & oct_he_mesh.faces[& 1].clone();
-    oct_he_mesh.triangulate_face(Pt::new(-1.0, 1.0, 1.0), alt_face_2);
-  }
-
-  let oct_he_mesh_buffer = BufferSet::from_half_edge_mesh_flat_faces(& window, & oct_he_mesh);
-
-  // let tet_pts = get_tetrahedron_points();
-  // let tet_he_mesh = HalfEdgeMesh::from_tetrahedron_pts(tet_pts[0], tet_pts[1], tet_pts[2], tet_pts[3]);
-  // let tet_he_mesh_buffer = BufferSet::from_half_edge_mesh_flat_faces(& window, & tet_he_mesh);
 
   // Vertex Shader
   let mut vert_shader_file = File::open("examples/shader/base.vs").unwrap();

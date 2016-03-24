@@ -222,17 +222,28 @@ pub fn get_convex_hull(mut points_list: Vec<Pt>) -> HalfEdgeMesh {
         .collect();
 
     let (point_maxima, _) = face_visible_points.iter()
-        .fold((None, 0.0), |(mut point_maxima, mut max_dist), pt| {
+        .enumerate()
+        .fold((None, 0.0), |(mut point_maxima, mut max_dist), (idx, pt)| {
           let dist = test_face.borrow().directed_distance_to(pt);
           if dist > max_dist {
-            point_maxima = Some(pt.clone());
+            point_maxima = Some((idx, pt.clone()));
             max_dist = dist;
           }
           (point_maxima, max_dist)
         });
 
     if point_maxima.is_none() { continue; }
-    let max_point = point_maxima.unwrap();
+    let (max_index, max_point) = point_maxima.unwrap();
+
+    // Removes the maximum point from the list of possible points
+    // This is essential, because it avoids a certain situation where
+    // The algorithm generates new faces which can still see the original maximum point,
+    // And these faces then are split, and generate new faces which can still see the
+    // Maximum point, along with two invalid faces.
+    // I still don't understand The exact conditions under which this occurs, but try
+    // removing this line and generating a random convex hull about 40 or 50 times, and it'll
+    // probably happen once.
+    points_list.remove(max_index);
 
     // For all the faces in the mesh, check whether they are visible from the point
     // i.e. check whether the point is in the direction of the face normal,

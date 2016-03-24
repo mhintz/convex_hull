@@ -3,13 +3,6 @@ use std;
 use half_edge_mesh::ptr::{Ptr, EdgePtr, VertPtr, FacePtr, EdgeRc, VertRc, FaceRc};
 use half_edge_mesh::iterators::*;
 
-// Please, don't make more than 2^32-1 edges, vertices, or faces
-// TODO: better ids (mesh-specific?)
-// Maybe use this: https://crates.io/crates/snowflake
-static mut edge_id: u32 = 0;
-
-fn get_edge_id() -> u32 { unsafe { edge_id += 1; edge_id } }
-
 #[derive(Debug)]
 pub struct Edge {
   pub next: EdgePtr,
@@ -22,9 +15,9 @@ pub struct Edge {
 // TODO: change the name of set_*_rc to just set_*, and change the current set_* to set_*_ptr
 // because set_*_rc is used way more than set_* at the moment.
 impl Edge {
-  pub fn empty() -> Edge {
+  pub fn empty(id: u32) -> Edge {
     Edge {
-      id: get_edge_id(),
+      id: id,
       next: EdgePtr::empty(),
       pair: EdgePtr::empty(),
       origin: VertPtr::empty(),
@@ -32,9 +25,9 @@ impl Edge {
     }
   }
 
-  pub fn with_origin(origin: VertPtr) -> Edge {
+  pub fn with_origin(id: u32, origin: VertPtr) -> Edge {
     Edge {
-      id: get_edge_id(),
+      id: id,
       next: EdgePtr::empty(),
       pair: EdgePtr::empty(),
       origin: origin,

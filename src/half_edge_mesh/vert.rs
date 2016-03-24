@@ -5,10 +5,6 @@ use defs::*;
 use half_edge_mesh::ptr::{Ptr, EdgePtr, EdgeRc};
 use half_edge_mesh::iterators::*;
 
-static mut vert_id: u32 = 0;
-
-fn get_vert_id() -> u32 { unsafe { vert_id += 1; vert_id } }
-
 #[derive(Debug)]
 pub struct Vert {
   pub edge: EdgePtr,
@@ -19,18 +15,18 @@ pub struct Vert {
 impl Vert {
   // All structure of the mesh revolves around vertex positions and their connectivity.
   // (Faces are just an abstraction). All vertices must therefore have a concrete position.
-  pub fn empty(pos: Pt) -> Vert {
+  pub fn empty(id: u32, pos: Pt) -> Vert {
     Vert {
-      id: get_vert_id(),
+      id: id,
       edge: EdgePtr::empty(),
       pos: pos,
     }
   }
 
   // Vertex connected to an existing edge
-  pub fn with_edge(pos: Pt, edge: EdgePtr) -> Vert {
+  pub fn with_edge(id: u32, pos: Pt, edge: EdgePtr) -> Vert {
     Vert {
-      id: get_vert_id(),
+      id: id,
       edge: edge,
       pos: pos,
     }

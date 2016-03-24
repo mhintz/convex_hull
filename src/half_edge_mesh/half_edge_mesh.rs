@@ -21,11 +21,25 @@ pub struct HalfEdgeMesh {
   pub edges: HashMap<u32, EdgeRc>,
   pub vertices: HashMap<u32, VertRc>,
   pub faces: HashMap<u32, FaceRc>,
+  // Vertex, edge, and face ids are mesh-specific and unique only within a certain mesh
+  // Integer overflow is undefined in Rust, but checked in debug builds. I think this means
+  // that it's possible to generate the same id twice, after 2^32-1 ids have been made.
+  // Try not to make more than 2^32-1 of any one of them, stuff might get messed up.
+  cur_edge_id: u32,
+  cur_vert_id: u32,
+  cur_face_id: u32,
 }
 
 impl HalfEdgeMesh {
   pub fn empty() -> HalfEdgeMesh {
-    HalfEdgeMesh { edges: HashMap::new(), vertices: HashMap::new(), faces: HashMap::new(), }
+    HalfEdgeMesh {
+      edges: HashMap::new(),
+      vertices: HashMap::new(),
+      faces: HashMap::new(),
+      cur_edge_id: 0,
+      cur_vert_id: 0,
+      cur_face_id: 0,
+    }
   }
 
   // A half-edge mesh requires at least a tetrahedron to be valid
@@ -34,15 +48,21 @@ impl HalfEdgeMesh {
     // In progress
     let mut mesh = HalfEdgeMesh::empty();
 
-    let v1 = Ptr::new_rc(Vert::empty(p1));
-    let v2 = Ptr::new_rc(Vert::empty(p2));
-    let v3 = Ptr::new_rc(Vert::empty(p3));
-    let v4 = Ptr::new_rc(Vert::empty(p4));
+    let v1 = Ptr::new_rc(Vert::empty(mesh.new_vert_id(), p1));
+    let v2 = Ptr::new_rc(Vert::empty(mesh.new_vert_id(), p2));
+    let v3 = Ptr::new_rc(Vert::empty(mesh.new_vert_id(), p3));
+    let v4 = Ptr::new_rc(Vert::empty(mesh.new_vert_id(), p4));
 
-    mesh.add_triangle(make_triangle(& v1, & v2, & v3));
-    mesh.add_triangle(make_triangle(& v2, & v1, & v4));
-    mesh.add_triangle(make_triangle(& v3, & v4, & v1));
-    mesh.add_triangle(make_triangle(& v4, & v3, & v2));
+    let mut tri;
+
+    tri = mesh.make_triangle(& v1, & v2, & v3);
+    mesh.add_triangle(tri);
+    tri = mesh.make_triangle(& v2, & v1, & v4);
+    mesh.add_triangle(tri);
+    tri = mesh.make_triangle(& v3, & v4, & v1);
+    mesh.add_triangle(tri);
+    tri = mesh.make_triangle(& v4, & v3, & v2);
+    mesh.add_triangle(tri);
 
     mesh.move_verts(vec![v1, v2, v3, v4]);
 
@@ -55,21 +75,31 @@ impl HalfEdgeMesh {
   pub fn from_octahedron_pts(p1: Pt, p2: Pt, p3: Pt, p4: Pt, p5: Pt, p6: Pt) -> HalfEdgeMesh {
     let mut mesh = HalfEdgeMesh::empty();
 
-    let v1 = Ptr::new_rc(Vert::empty(p1));
-    let v2 = Ptr::new_rc(Vert::empty(p2));
-    let v3 = Ptr::new_rc(Vert::empty(p3));
-    let v4 = Ptr::new_rc(Vert::empty(p4));
-    let v5 = Ptr::new_rc(Vert::empty(p5));
-    let v6 = Ptr::new_rc(Vert::empty(p6));
+    let v1 = Ptr::new_rc(Vert::empty(mesh.new_vert_id(), p1));
+    let v2 = Ptr::new_rc(Vert::empty(mesh.new_vert_id(), p2));
+    let v3 = Ptr::new_rc(Vert::empty(mesh.new_vert_id(), p3));
+    let v4 = Ptr::new_rc(Vert::empty(mesh.new_vert_id(), p4));
+    let v5 = Ptr::new_rc(Vert::empty(mesh.new_vert_id(), p5));
+    let v6 = Ptr::new_rc(Vert::empty(mesh.new_vert_id(), p6));
 
-    mesh.add_triangle(make_triangle(& v1, & v2, & v3));
-    mesh.add_triangle(make_triangle(& v1, & v4, & v2));
-    mesh.add_triangle(make_triangle(& v1, & v3, & v5));
-    mesh.add_triangle(make_triangle(& v1, & v5, & v4));
-    mesh.add_triangle(make_triangle(& v6, & v3, & v2));
-    mesh.add_triangle(make_triangle(& v6, & v2, & v4));
-    mesh.add_triangle(make_triangle(& v6, & v5, & v3));
-    mesh.add_triangle(make_triangle(& v6, & v4, & v5));
+    let mut tri;
+
+    tri = mesh.make_triangle(& v1, & v2, & v3);
+    mesh.add_triangle(tri);
+    tri = mesh.make_triangle(& v1, & v4, & v2);
+    mesh.add_triangle(tri);
+    tri = mesh.make_triangle(& v1, & v3, & v5);
+    mesh.add_triangle(tri);
+    tri = mesh.make_triangle(& v1, & v5, & v4);
+    mesh.add_triangle(tri);
+    tri = mesh.make_triangle(& v6, & v3, & v2);
+    mesh.add_triangle(tri);
+    tri = mesh.make_triangle(& v6, & v2, & v4);
+    mesh.add_triangle(tri);
+    tri = mesh.make_triangle(& v6, & v5, & v3);
+    mesh.add_triangle(tri);
+    tri = mesh.make_triangle(& v6, & v4, & v5);
+    mesh.add_triangle(tri);
 
     mesh.move_verts(vec![v1, v2, v3, v4, v5, v6]);
 
@@ -83,23 +113,26 @@ impl HalfEdgeMesh {
     let mut id_map: HashMap<usize, u32> = HashMap::new(); // Maps indices to ids
 
     for (idx, pos) in vertices.iter().enumerate() {
-      let vert = Ptr::new_rc(Vert::empty(pos.clone()));
+      let vert = Ptr::new_rc(Vert::empty(mesh.new_vert_id(), pos.clone()));
       id_map.insert(idx, vert.borrow().id);
       mesh.push_vert(vert);
     }
 
     for tri in indices.iter() {
-      let face = Ptr::new_rc(Face::empty());
+      let face = Ptr::new_rc(Face::empty(mesh.new_face_id()));
       let mut new_edges: Vec<EdgeRc> = Vec::new();
 
       for idx in tri {
         match id_map.get(idx) {
           Some(vert_id) => {
-            if let Some(ref vert) = mesh.vertices.get(vert_id) {
-              let edge = Ptr::new_rc(Edge::with_origin(Ptr::new(vert)));
-              edge.borrow_mut().set_face_rc(& face);
-              vert.borrow_mut().set_edge_rc(& edge);
-              new_edges.push(edge);
+            if mesh.vertices.contains_key(vert_id) {
+              let new_edge_id = mesh.new_edge_id();
+              if let Some(vert) = mesh.vertices.get(vert_id) {
+                let edge = Ptr::new_rc(Edge::with_origin(new_edge_id, Ptr::new(vert)));
+                edge.borrow_mut().set_face_rc(& face);
+                vert.borrow_mut().set_edge_rc(& edge);
+                new_edges.push(edge);
+              }
             }
           },
           None => (),
@@ -125,6 +158,18 @@ impl HalfEdgeMesh {
     report_connect_err(connect_pairs(&mut mesh));
 
     return mesh;
+  }
+
+  pub fn new_edge_id(&mut self) -> u32 {
+    self.cur_edge_id += 1; self.cur_edge_id
+  }
+
+  pub fn new_vert_id(&mut self) -> u32 {
+    self.cur_vert_id += 1; self.cur_vert_id
+  }
+
+  pub fn new_face_id(&mut self) -> u32 {
+    self.cur_face_id += 1; self.cur_face_id
   }
 
   pub fn push_edge(&mut self, edge: EdgeRc) {
@@ -202,6 +247,42 @@ impl HalfEdgeMesh {
     self.edges.insert(key, triangle.3);
   }
 
+  // Takes three Rc<RefCell<Vert>>,
+  // creates three edges and one face, and connects them as well as it can
+  // Note: since this creates a lone triangle, edge.pair links are
+  // still empty after this function
+  pub fn make_triangle(&mut self, p1: & VertRc, p2: & VertRc, p3: & VertRc) -> (FaceRc, EdgeRc, EdgeRc, EdgeRc) {
+    // Create triangle edges
+    let e1 = Ptr::new_rc(Edge::with_origin(self.new_edge_id(), Ptr::new(& p1)));
+    let e2 = Ptr::new_rc(Edge::with_origin(self.new_edge_id(), Ptr::new(& p2)));
+    let e3 = Ptr::new_rc(Edge::with_origin(self.new_edge_id(), Ptr::new(& p3)));
+
+    // Be sure to set up vertex connectivity with the new edges
+    // It doesn't matter which edge a vertex points to,
+    // so long as it points back to the vertex
+    p1.borrow_mut().take_edge(Ptr::new(& e1));
+    p2.borrow_mut().take_edge(Ptr::new(& e2));
+    p3.borrow_mut().take_edge(Ptr::new(& e3));
+
+    // Set up edge cycle
+    e1.borrow_mut().take_next(Ptr::new(& e2));
+    e2.borrow_mut().take_next(Ptr::new(& e3));
+    e3.borrow_mut().take_next(Ptr::new(& e1));
+
+    // Create triangle face
+    let f1 = Ptr::new_rc(Face::with_edge(self.new_face_id(), Ptr::new(& e1)));
+
+    // Set up face links
+    e1.borrow_mut().take_face(Ptr::new(& f1));
+    e2.borrow_mut().take_face(Ptr::new(& f1));
+    e3.borrow_mut().take_face(Ptr::new(& f1));
+
+    // Now is the right time to run this, since vertices and edges are connected
+    f1.borrow_mut().compute_attrs();
+
+    (f1, e1, e2, e3)
+  }
+
   // Checks if two faces are adjacent by looking for a shared edge
   pub fn are_faces_adjacent(& self, face_l: & FaceRc, face_r: & FaceRc) -> bool {
     face_l.borrow().adjacent_edges()
@@ -233,7 +314,7 @@ impl HalfEdgeMesh {
     debug_assert!(face_edges.len() == 3, "should be 3 adjacent edges");
     debug_assert!(vertices_len == 3, "should be 3 adjacent vertices"); // should be 3, or else your faces aren't triangles
 
-    let apex_vert = Ptr::new_rc(Vert::empty(point));
+    let apex_vert = Ptr::new_rc(Vert::empty(self.new_vert_id(), point));
 
     // Add the three new faces - one attached to each of the original face's edges,
     // plus two new edges attached to the point
@@ -244,9 +325,9 @@ impl HalfEdgeMesh {
       base_edge.borrow_mut().take_origin(Ptr::new(& face_vertices[i]));
       base_edge.borrow().origin.upgrade().map(|o| o.borrow_mut().take_edge(Ptr::new(base_edge)));
 
-      let new_face = Ptr::new_rc(Face::with_edge(Ptr::new(base_edge)));
-      let leading_edge = Ptr::new_rc(Edge::with_origin(Ptr::new(& face_vertices[(i + 1) % vertices_len])));
-      let trailing_edge = Ptr::new_rc(Edge::with_origin(Ptr::new(& apex_vert)));
+      let new_face = Ptr::new_rc(Face::with_edge(self.new_face_id(), Ptr::new(base_edge)));
+      let leading_edge = Ptr::new_rc(Edge::with_origin(self.new_edge_id(), Ptr::new(& face_vertices[(i + 1) % vertices_len])));
+      let trailing_edge = Ptr::new_rc(Edge::with_origin(self.new_edge_id(), Ptr::new(& apex_vert)));
 
       base_edge.borrow_mut().take_face(Ptr::new(& new_face));
       leading_edge.borrow_mut().take_face(Ptr::new(& new_face));
@@ -414,7 +495,7 @@ impl HalfEdgeMesh {
     }
 
     // create a new vertex for the point
-    let apex_vert = Ptr::new_rc(Vert::empty(point));
+    let apex_vert = Ptr::new_rc(Vert::empty(self.new_vert_id(), point));
 
     // Going to iterate twice through the ordered list of horizon edges created earlier
     // And set up new mesh entities and their linkage
@@ -428,12 +509,12 @@ impl HalfEdgeMesh {
       let next_edge = & horizon_vec[(idx + 1) % horizon_len];
       if let Some(next_origin) = next_edge.borrow().origin.upgrade() {
         // create a new face, connected to the base edge
-        let new_face = Ptr::new_rc(Face::with_edge(Ptr::new(base_edge)));
+        let new_face = Ptr::new_rc(Face::with_edge(self.new_face_id(), Ptr::new(base_edge)));
         // create two new edges, one leading and one trailing.
         // The leading edge connects to the next horizon edge's origin vertex
-        let new_leading = Ptr::new_rc(Edge::with_origin(Ptr::new(& next_origin)));
+        let new_leading = Ptr::new_rc(Edge::with_origin(self.new_edge_id(), Ptr::new(& next_origin)));
         // the trailing edge connects to the new vertex
-        let new_trailing = Ptr::new_rc(Edge::with_origin(Ptr::new(& apex_vert)));
+        let new_trailing = Ptr::new_rc(Edge::with_origin(self.new_edge_id(), Ptr::new(& apex_vert)));
         // connect the new vertex to the trailing edge (this is repeated many times but is necessary for mesh validity)
         apex_vert.borrow_mut().set_edge_rc(& new_trailing);
         // connect next ptrs: the horizon edge to the leading edge, the leading to the trailing, and the trailing to the horizon
@@ -492,7 +573,7 @@ impl HalfEdgeMesh {
     // Must have 3 edges, so that the surrounding faces can be combined to a triangle
     if edges.len() != 3 { return Err("Vertex must have exactly 3 connecting edges"); }
 
-    let new_face = Ptr::new_rc(Face::empty()); // n_f
+    let new_face = Ptr::new_rc(Face::empty(self.new_face_id())); // n_f
 
     for (idx, edge) in edges.iter().enumerate() {
       let edge_b = edge.borrow();

@@ -9,10 +9,6 @@ use defs::*;
 use half_edge_mesh::ptr::{Ptr, EdgePtr, EdgeRc, VertRc};
 use half_edge_mesh::iterators::*;
 
-static mut face_id: u32 = 0;
-
-fn get_face_id() -> u32 { unsafe { face_id += 1; face_id } }
-
 // TODO: Better way of figuring out when to run compute_attrs
 #[derive(Debug)]
 pub struct Face {
@@ -23,9 +19,9 @@ pub struct Face {
 }
 
 impl Face {
-  pub fn empty() -> Face {
+  pub fn empty(id: u32) -> Face {
     Face {
-      id: get_face_id(),
+      id: id,
       edge: EdgePtr::empty(),
       // Are these sensible defaults?
       // Are these values even necessary?
@@ -35,9 +31,9 @@ impl Face {
   }
 
   // Face connected to an existing edge
-  pub fn with_edge(edge: EdgePtr) -> Face {
+  pub fn with_edge(id: u32, edge: EdgePtr) -> Face {
     Face {
-      id: get_face_id(),
+      id: id,
       edge: edge,
       normal: Vec3::unit_z(),
       center: Pt::origin(),

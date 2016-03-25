@@ -5,8 +5,8 @@ extern crate convex_hull;
 extern crate rand;
 extern crate time;
 
-use std::io::prelude::*;
 use std::fs::File;
+use std::io::Read;
 
 use glium::glutin;
 use glium::{DisplayBuild, Surface};

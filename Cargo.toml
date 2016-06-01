@@ -4,10 +4,10 @@ name = "convex_hull"
 version = "0.1.0"
 
 [dependencies]
-cgmath = "0.7.0"
+cgmath = "^0.9.1"
 glium = "0.13.5"
 image = "0.6.1"
 itertools = "0.4.8"
 rand = "0.3"
 time = "0.1"
-half_edge_mesh = "1.0.3"
+half_edge_mesh = "^1.0.3"

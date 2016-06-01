@@ -1,10 +1,9 @@
 use std::collections::LinkedList;
 
+use cgmath::prelude::*;
+
 use defs::*;
-
 use half_edge_mesh::{HalfEdgeMesh, FaceRc};
-
-use cgmath::{EuclideanVector, Vector, Point};
 
 // Original Java implementation of this function in comments
 // distSqPointSegment(float[] a, float[] b, float[] c)
@@ -19,13 +18,13 @@ fn line_to_pt_dist_sq(pt1: Pt, pt2: Pt, target: Pt) -> f32 {
   // float e = DwVec3.dot(ac, ab);
   let p1_t_on_line = p1_to_target.dot(line);
   // if (e < 0.0f) return DwVec3.dot(ac,ac);
-  if p1_t_on_line < 0.0 { return p1_to_target.length2(); }
+  if p1_t_on_line < 0.0 { return p1_to_target.magnitude2(); }
   // float f = DwVec3.dot(ab, ab);
-  let line_length2 = line.length2();
+  let line_length2 = line.magnitude2();
   // if (e >= f) return DwVec3.dot(bc,bc);
-  if p1_t_on_line >= line_length2 { return p2_to_target.length2(); }
+  if p1_t_on_line >= line_length2 { return p2_to_target.magnitude2(); }
   // return DwVec3.dot(ac,ac) - e * e / f;
-  return p1_to_target.length2() - p1_t_on_line * p1_t_on_line / line_length2;
+  return p1_to_target.magnitude2() - p1_t_on_line * p1_t_on_line / line_length2;
 }
 
 fn triangle_normal(pt1: Pt, pt2: Pt, pt3: Pt) -> Vec3 {
@@ -129,10 +128,10 @@ fn get_extreme_points(list: & Vec<Pt>) -> Vec<usize> {
 
   let mut p0 = boundaries[0];
   let mut p1 = boundaries[1];
-  let mut pt_dist_sq_max = (p0.pt - p1.pt).length2();
+  let mut pt_dist_sq_max = (p0.pt - p1.pt).magnitude2();
   for (idx_a, pair_a) in boundaries.iter().enumerate() {
     for pair_b in boundaries[(idx_a + 1)..].iter() {
-      let dist = (pair_a.pt - pair_b.pt).length2();
+      let dist = (pair_a.pt - pair_b.pt).magnitude2();
       if dist > pt_dist_sq_max {
         pt_dist_sq_max = dist;
         p0 = pair_a.clone();
@@ -157,7 +156,7 @@ fn get_extreme_points(list: & Vec<Pt>) -> Vec<usize> {
   let face_center = triangle_center(p0.pt, p1.pt, p2.pt);
   for pair in boundaries.iter() {
     if pair.idx == p0.idx || pair.idx == p1.idx || pair.idx == p2.idx { continue; }
-    let dist = (pair.pt - face_center).length2();
+    let dist = (pair.pt - face_center).magnitude2();
     if dist > tri_dist_sq_max {
       tri_dist_sq_max = dist;
       p3 = pair.clone();

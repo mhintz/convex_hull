@@ -1,13 +1,9 @@
 use std::f32;
 
 use glium::index::{PrimitiveType};
-
-// Needed for normalize
-use cgmath::EuclideanVector;
-use cgmath::Vector;
+use cgmath::prelude::*;
 
 use defs::*;
-
 use half_edge_mesh::{HalfEdgeMesh, ToPtrVec};
 
 pub struct Mesh {
@@ -78,9 +74,7 @@ pub fn get_normal(vtxs: & Vec<Pt>, idxs: & Tri) -> Vec3 {
 pub fn get_verts_normal(vert0: & Pt, vert1: & Pt, vert2: & Pt) -> Vec3 {
   let s1 = vert1 - vert0;
   let s2 = vert2 - vert0;
-  let norm: Vec3 = s1.cross(s2);
-  norm.normalize();
-  return norm;
+  s1.cross(s2).normalize()
 }
 
 pub fn split_mesh_vertices(mesh: & Mesh) -> Mesh {

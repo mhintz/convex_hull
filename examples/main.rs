@@ -11,7 +11,8 @@ use std::io::Read;
 use glium::glutin;
 use glium::{DisplayBuild, Surface};
 
-use cgmath::{Vector3, EuclideanVector, Point, Rotation3, Rad, Angle, Matrix, SquareMatrix};
+use cgmath::prelude::*;
+use cgmath::{Vector3, Rad};
 
 use rand::distributions::Sample;
 

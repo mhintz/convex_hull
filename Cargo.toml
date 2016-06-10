@@ -1,7 +1,12 @@
 [package]
 authors = ["Mark Hintz <markinportland7@gmail.com>"]
 name = "convex_hull"
-version = "0.1.0"
+version = "0.1.1"
+license = "MIT"
+description = "An implementation of a 3D convex hull algorithm. Comes with an example"
+repository = "https://github.com/mhintz/convex_hull"
+readme = "README.md"
+keywords = ["convex", "hull", "geometry", "3D"]
 
 [dependencies]
 cgmath = "^0.9.1"
@@ -10,4 +15,4 @@ image = "0.6.1"
 itertools = "0.4.8"
 rand = "0.3"
 time = "0.1"
-half_edge_mesh = "^1.0.3"
+half_edge_mesh = "^1.0.6"
